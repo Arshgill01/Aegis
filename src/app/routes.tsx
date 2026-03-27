@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 
-import { RoutePlaceholderPage } from "../pages/RoutePlaceholderPage";
+import { AgentsPage } from "../pages/AgentsPage";
+import { ApprovalsPage } from "../pages/ApprovalsPage";
+import { FinOpsWorkflowPage } from "../pages/FinOpsWorkflowPage";
+import { MissionControlPage } from "../pages/MissionControlPage";
+import { PoliciesPage } from "../pages/PoliciesPage";
+import { ReplayAuditPage } from "../pages/ReplayAuditPage";
+import { RunsTasksPage } from "../pages/RunsTasksPage";
+import { SettingsDemoControlsPage } from "../pages/SettingsDemoControlsPage";
 
 type NavItem = {
   label: string;
@@ -87,82 +94,34 @@ export const navigationSections: NavSection[] = [
 export const appRoutes: AppRoute[] = [
   {
     ...navigationSections[0].items[0],
-    element: (
-      <RoutePlaceholderPage
-        title="Mission Control"
-        category="Operational center"
-        summary="Stable overview route for active AI work, system posture, and command visibility."
-      />
-    ),
+    element: <MissionControlPage />,
   },
   {
     ...navigationSections[0].items[1],
-    element: (
-      <RoutePlaceholderPage
-        title="Agents"
-        category="Worker surface"
-        summary="Dedicated route for worker roles, responsibilities, and runtime posture."
-      />
-    ),
+    element: <AgentsPage />,
   },
   {
     ...navigationSections[0].items[2],
-    element: (
-      <RoutePlaceholderPage
-        title="Runs"
-        category="Execution surface"
-        summary="Stable route for workflow lists, tasks, and handoff visibility."
-      />
-    ),
+    element: <RunsTasksPage />,
   },
   {
     ...navigationSections[1].items[0],
-    element: (
-      <RoutePlaceholderPage
-        title="Approvals"
-        category="Human gate"
-        summary="Reserved action surface for escalations, review, and controlled execution decisions."
-      />
-    ),
+    element: <ApprovalsPage />,
   },
   {
     ...navigationSections[1].items[1],
-    element: (
-      <RoutePlaceholderPage
-        title="Replay & Audit"
-        category="Evidence surface"
-        summary="Reserved space for inspectable replay, receipts, and audit evidence."
-      />
-    ),
+    element: <ReplayAuditPage />,
   },
   {
     ...navigationSections[1].items[2],
-    element: (
-      <RoutePlaceholderPage
-        title="Policies"
-        category="Control surface"
-        summary="Stable home for rules, thresholds, and explainable risk posture."
-      />
-    ),
+    element: <PoliciesPage />,
   },
   {
     ...navigationSections[2].items[0],
-    element: (
-      <RoutePlaceholderPage
-        title="FinOps Workflow"
-        category="Showcase domain"
-        summary="Entry point for the first back-office workflow domain without locking the platform to finance."
-      />
-    ),
+    element: <FinOpsWorkflowPage />,
   },
   {
     ...navigationSections[2].items[1],
-    element: (
-      <RoutePlaceholderPage
-        title="Settings & Demo Controls"
-        category="Environment surface"
-        summary="Reserved route for demo-safe controls and shell-level environment posture."
-      />
-    ),
+    element: <SettingsDemoControlsPage />,
   },
 ];

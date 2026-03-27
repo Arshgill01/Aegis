@@ -1,0 +1,46 @@
+:root {
+  color-scheme: dark;
+  font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --bg-canvas: #07111f;
+  --bg-canvas-elevated: #0c1728;
+  --bg-shell: rgba(9, 18, 31, 0.84);
+  --bg-surface: rgba(13, 24, 41, 0.92);
+  --bg-surface-strong: rgba(18, 32, 53, 0.96);
+  --bg-inset: rgba(7, 15, 27, 0.72);
+  --bg-hover: rgba(31, 60, 92, 0.18);
+  --bg-overlay: rgba(5, 9, 18, 0.64);
+  --border-muted: rgba(148, 163, 184, 0.12);
+  --border-strong: rgba(148, 163, 184, 0.22);
+  --border-accent: rgba(72, 142, 255, 0.24);
+  --text-primary: #f4f7fb;
+  --text-secondary: #bdc9db;
+  --text-muted: #7d8ca5;
+  --text-tertiary: #94a3b8;
+  --signal-blue: #4c9dff;
+  --signal-cyan: #37c5ff;
+  --signal-green: #34c98b;
+  --signal-amber: #f0b14a;
+  --signal-red: #ef6b63;
+  --signal-neutral: #7f90ad;
+  --shadow-panel: 0 18px 45px rgba(1, 6, 14, 0.36);
+  --shadow-soft: 0 12px 28px rgba(1, 6, 14, 0.22);
+  --radius-lg: 16px;
+  --radius-md: 14px;
+  --radius-sm: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --content-width: 1440px;
+}

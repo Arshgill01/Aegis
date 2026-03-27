@@ -276,6 +276,10 @@ select {
   box-shadow: var(--shadow);
 }
 
+.mission-control__briefing-copy {
+  max-width: 760px;
+}
+
 .mission-control__briefing h1 {
   font-size: clamp(2rem, 4vw, 2.8rem);
   max-width: 12ch;
@@ -285,6 +289,54 @@ select {
   max-width: 66ch;
   margin: 0.9rem 0 0;
   line-height: 1.6;
+}
+
+.mission-control__briefing-status {
+  margin-top: 1rem;
+}
+
+.mission-control__briefing-signals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  min-width: min(460px, 100%);
+}
+
+.mission-control__signal-card {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(132, 168, 196, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mission-control__signal-card span,
+.run-card__grid span,
+.approval-card__footer span,
+.worker-card__meta span,
+.posture-card span,
+.flagged-card__footer span,
+.spotlight-card__eyebrow span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.mission-control__signal-card strong,
+.run-card__identity strong,
+.approval-card__header strong,
+.posture-card strong,
+.flagged-card__header strong,
+.worker-card__header strong,
+.spotlight-card h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.mission-control__signal-card strong,
+.posture-card strong {
+  font-size: 1.55rem;
 }
 
 .metric-grid {
@@ -357,6 +409,221 @@ select {
 
 .panel__header p {
   margin: 0.35rem 0 0;
+  line-height: 1.5;
+}
+
+.run-list,
+.approval-list,
+.activity-feed,
+.flagged-list,
+.worker-grid,
+.posture-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.run-card,
+.approval-card,
+.flagged-card,
+.worker-card,
+.posture-card,
+.spotlight-card {
+  border: 1px solid rgba(132, 168, 196, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.run-card,
+.approval-card,
+.flagged-card,
+.worker-card,
+.spotlight-card {
+  padding: 1rem;
+}
+
+.run-card__header,
+.approval-card__header,
+.approval-card__footer,
+.activity-row__meta,
+.activity-row__footer,
+.flagged-card__header,
+.flagged-card__footer,
+.worker-card__header,
+.worker-card__meta,
+.spotlight-card__eyebrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.run-card__identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.run-card__identity strong {
+  font-size: 1rem;
+}
+
+.run-card__identity span,
+.run-card__header p,
+.approval-card__header p,
+.activity-row__body p,
+.flagged-card p,
+.worker-card__header p,
+.worker-card__focus,
+.spotlight-card p {
+  color: var(--muted);
+}
+
+.run-card__header p,
+.approval-card__header p,
+.flagged-card p,
+.worker-card__header p {
+  margin: 0.3rem 0 0;
+}
+
+.run-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.run-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+  margin-top: 1rem;
+}
+
+.run-card__grid strong,
+.flagged-card__footer strong {
+  font-size: 0.96rem;
+  line-height: 1.4;
+}
+
+.approval-card__reason,
+.worker-card__focus,
+.spotlight-card p {
+  margin: 0.85rem 0 0;
+  line-height: 1.55;
+}
+
+.approval-card__footer,
+.flagged-card__footer {
+  margin-top: 0.9rem;
+}
+
+.activity-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.activity-row__dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-top: 0.45rem;
+  border-radius: 50%;
+}
+
+.activity-row__dot--info {
+  background: rgba(110, 182, 255, 0.8);
+}
+
+.activity-row__dot--success {
+  background: rgba(89, 214, 200, 0.8);
+}
+
+.activity-row__dot--warning {
+  background: rgba(247, 185, 85, 0.84);
+}
+
+.activity-row__dot--danger {
+  background: rgba(243, 123, 121, 0.84);
+}
+
+.activity-row__body {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(132, 168, 196, 0.09);
+}
+
+.activity-row:last-child .activity-row__body {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.activity-row__meta strong,
+.worker-card__header strong,
+.spotlight-card h3 {
+  font-size: 1rem;
+}
+
+.activity-row__meta span,
+.activity-row__footer span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.activity-row__body p {
+  margin: 0.45rem 0 0;
+  line-height: 1.55;
+}
+
+.activity-row__footer {
+  margin-top: 0.8rem;
+}
+
+.posture-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 0.95rem;
+}
+
+.posture-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem;
+}
+
+.flagged-card__header strong,
+.worker-card__header strong {
+  font-size: 1rem;
+}
+
+.flagged-card__footer strong {
+  max-width: 14ch;
+  text-align: right;
+}
+
+.worker-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.worker-card__meta {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(132, 168, 196, 0.08);
+}
+
+.spotlight-card__eyebrow {
+  align-items: center;
+}
+
+.spotlight-card h3 {
+  margin: 0.9rem 0 0;
+}
+
+.spotlight-list {
+  margin: 1rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.65rem;
+  color: var(--muted-strong);
   line-height: 1.5;
 }
 
@@ -471,6 +738,12 @@ select {
   .mission-layout--secondary {
     grid-template-columns: 1fr;
   }
+
+  .mission-control__briefing-signals,
+  .posture-grid,
+  .worker-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -488,6 +761,23 @@ select {
   .metric-grid,
   .placeholder-grid {
     grid-template-columns: 1fr;
+  }
+
+  .run-card__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .run-card__header,
+  .approval-card__header,
+  .approval-card__footer,
+  .activity-row__meta,
+  .activity-row__footer,
+  .flagged-card__header,
+  .flagged-card__footer,
+  .worker-card__header,
+  .worker-card__meta,
+  .spotlight-card__eyebrow {
+    flex-direction: column;
   }
 
   .mission-control__briefing h1 {

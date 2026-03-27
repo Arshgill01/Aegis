@@ -242,6 +242,48 @@ textarea {
   max-width: 34rem;
 }
 
+.panel-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.panel-item {
+  padding: 0.9rem 0.95rem;
+  border: 1px solid rgba(147, 167, 206, 0.1);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(17, 28, 45, 0.92), rgba(12, 21, 35, 0.86));
+}
+
+.panel-item-label {
+  display: inline-flex;
+  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #79d6c2;
+}
+
+.panel-item h4 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.panel-item p,
+.panel-footer,
+.placeholder-note {
+  color: #a6b5d1;
+}
+
+.panel-item p {
+  margin: 0.4rem 0 0;
+}
+
+.panel-footer {
+  display: block;
+  margin-top: 0.95rem;
+}
+
 .placeholder-panel {
   display: grid;
   align-content: start;
@@ -257,6 +299,18 @@ textarea {
   border: 1px solid rgba(121, 214, 194, 0.28);
   border-radius: 999px;
   background: rgba(15, 52, 55, 0.34);
+}
+
+.placeholder-notes {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.placeholder-note {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(121, 214, 194, 0.12);
+  border-radius: 16px;
+  background: rgba(13, 28, 39, 0.7);
 }
 
 .placeholder-frame {

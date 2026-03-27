@@ -25,10 +25,34 @@ export function OverviewPage() {
         {
           title: "Mission-control posture",
           description: "Overview remains intentionally restrained in this pass so the secondary routes can define their specific operating surfaces cleanly.",
+          items: [
+            {
+              label: "Visibility",
+              title: "Route shells now cover the full operating story",
+              description: "Agents, runs, approvals, replay, policy, FinOps, and demo controls each have a clear destination in the product shell.",
+            },
+            {
+              label: "Wave boundary",
+              title: "No fake execution logic is simulated here",
+              description: "The shell hints at future data without pretending runtime, approval, or audit systems already exist.",
+            },
+          ],
         },
         {
           title: "What lands next",
           description: "Seeded runs, worker activity, queue health, and risk posture can fill this shell once Wave 2 contracts arrive.",
+          items: [
+            {
+              label: "Contracts",
+              title: "Deterministic entities can plug into stable sections",
+              description: "The current layout already reserves places for lifecycle state, evidence, and route-specific summaries.",
+            },
+            {
+              label: "UX continuity",
+              title: "Overview can deepen later without reshaping the secondary routes",
+              description: "The route hierarchy and visual language are already coherent enough for later waves to extend safely.",
+            },
+          ],
         },
       ]}
       placeholder={{
@@ -36,6 +60,10 @@ export function OverviewPage() {
         title: "Overview composition stays lightweight",
         description: "This route exists so the app is coherent end-to-end, but deeper overview composition is intentionally deferred outside this pass.",
         helper: "Use the secondary routes to inspect the product posture for each capability area.",
+        notes: [
+          "Overview remains intentionally narrow in this branch.",
+          "Secondary routes now carry the product posture for each core capability.",
+        ],
       }}
     />
   );

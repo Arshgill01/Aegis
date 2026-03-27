@@ -11,9 +11,17 @@ type FocusItem = {
   description: string;
 };
 
+type PanelItem = {
+  label: string;
+  title: string;
+  description: string;
+};
+
 type PanelProps = {
   title: string;
   description: string;
+  items?: PanelItem[];
+  footer?: string;
   children?: ReactNode;
 };
 
@@ -22,6 +30,7 @@ type PlaceholderProps = {
   title: string;
   description: string;
   helper: string;
+  notes?: string[];
 };
 
 type PageScaffoldProps = {
@@ -74,13 +83,25 @@ export function PageScaffold(props: PageScaffoldProps) {
   );
 }
 
-function Panel({ title, description, children }: PanelProps) {
+function Panel({ title, description, items, footer, children }: PanelProps) {
   return (
     <article className="panel">
       <div className="panel-header">
         <h3>{title}</h3>
         <p>{description}</p>
       </div>
+      {items?.length ? (
+        <div className="panel-list">
+          {items.map((item) => (
+            <section className="panel-item" key={`${title}-${item.label}-${item.title}`}>
+              <span className="panel-item-label">{item.label}</span>
+              <h4>{item.title}</h4>
+              <p>{item.description}</p>
+            </section>
+          ))}
+        </div>
+      ) : null}
+      {footer ? <small className="panel-footer">{footer}</small> : null}
       {children}
     </article>
   );
@@ -91,12 +112,22 @@ function PlaceholderState({
   title,
   description,
   helper,
+  notes,
 }: PlaceholderProps) {
   return (
     <article className="panel placeholder-panel">
       <span className="pill">{label}</span>
       <h3>{title}</h3>
       <p>{description}</p>
+      {notes?.length ? (
+        <div className="placeholder-notes">
+          {notes.map((note) => (
+            <div className="placeholder-note" key={note}>
+              {note}
+            </div>
+          ))}
+        </div>
+      ) : null}
       <div className="placeholder-frame">
         <div />
         <div />

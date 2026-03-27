@@ -40,6 +40,9 @@ export function AppShell() {
               Shared surfaces, spacing rhythm, and placeholder scaffolds for the
               first mission-control render.
             </p>
+            <NavLink to="/internal/primitives" className="sidebar-link">
+              Open primitives lab
+            </NavLink>
           </div>
         </div>
       </aside>

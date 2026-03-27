@@ -28,6 +28,7 @@ type MetricRowProps = {
 
 type KPIBadgeProps = {
   label: string;
+  tone?: "info" | "positive" | "attention" | "critical" | "neutral";
 };
 
 export function SurfaceCard({
@@ -83,6 +84,10 @@ export function Panel({
   );
 }
 
+export function InsetPanel(props: Omit<PanelProps, "inset">) {
+  return <Panel {...props} inset />;
+}
+
 export function SummaryStatCard({
   eyebrow,
   label,
@@ -113,6 +118,10 @@ export function MetricRow({ label, value }: MetricRowProps) {
   );
 }
 
-export function KPIBadge({ label }: KPIBadgeProps) {
-  return <span className="signal-kpi">{label}</span>;
+export function KPIBadge({ label, tone = "info" }: KPIBadgeProps) {
+  return (
+    <span className="signal-kpi" data-tone={tone}>
+      {label}
+    </span>
+  );
 }

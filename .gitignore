@@ -4,7 +4,16 @@
 !PLAN.md
 !AGENTS.md
 !.codex/
+!index.html
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.node.json
+!vite.config.ts
+!src/
 
 .codex/*
 !.codex/skills/
 !.codex/skills/**
+!src/**

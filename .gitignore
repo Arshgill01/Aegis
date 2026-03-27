@@ -1,10 +1,5 @@
-*
-!.gitignore
-!README.md
-!PLAN.md
-!AGENTS.md
-!.codex/
-
-.codex/*
-!.codex/skills/
-!.codex/skills/**
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { AppShell } from "./AppShell";
 import { OverviewPage } from "../pages/OverviewPage";
+import { PrimitivesShowcasePage } from "../pages/PrimitivesShowcasePage";
 import { ScaffoldPage } from "../pages/ScaffoldPage";
 
 export const router = createBrowserRouter([
@@ -9,6 +10,10 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <OverviewPage /> },
+      {
+        path: "internal/primitives",
+        element: <PrimitivesShowcasePage />,
+      },
       {
         path: "agents",
         element: (

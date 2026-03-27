@@ -1,0 +1,10 @@
+*
+!.gitignore
+!README.md
+!PLAN.md
+!AGENTS.md
+!.codex/
+
+.codex/*
+!.codex/skills/
+!.codex/skills/**

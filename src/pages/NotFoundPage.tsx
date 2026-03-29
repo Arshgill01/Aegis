@@ -1,21 +1,17 @@
 import { Link } from "react-router-dom";
 
-import { Panel } from "../components/ui/Panel";
-
 export function NotFoundPage() {
   return (
-    <div className="centered-state">
-      <Panel
-        title="Route not found"
-        description="This shell only exposes the Wave 1 mission-control route map."
-      >
-        <p className="placeholder-message">
-          Return to the tracked overview route to continue reviewing the current product shell.
-        </p>
-        <Link className="text-link" to="/">
-          Back to Mission Control
-        </Link>
-      </Panel>
+    <div className="not-found">
+      <p className="eyebrow">Route not found</p>
+      <h2>The requested surface is not registered in this shell.</h2>
+      <p>
+        Return to the primary control surface and continue from the stable Aegis
+        route hierarchy.
+      </p>
+      <Link className="not-found__link" to="/">
+        Go to Mission Control
+      </Link>
     </div>
   );
 }

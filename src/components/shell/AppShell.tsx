@@ -1,15 +1,12 @@
 import { Outlet, useLocation } from "react-router-dom";
 
+import { useShellOrchestrationSummary } from "../../app/data/hooks";
 import { navigationSections } from "../../app/routes";
 import { ShellSidebar } from "./ShellSidebar";
 
-const topbarMetrics = [
-  { label: "Shadow mode" },
-  { label: "Active" },
-];
-
 export function AppShell() {
   const location = useLocation();
+  const shellSummary = useShellOrchestrationSummary(location.pathname);
 
   const activeRoute =
     navigationSections
@@ -19,23 +16,25 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <div className="app-shell__backdrop" />
-      <ShellSidebar />
+      <ShellSidebar summary={shellSummary} />
       <div className="app-shell__content">
         <header className="topbar">
           <div className="topbar__copy">
             <p className="eyebrow">Aegis Control Tower</p>
             <h1>{activeRoute.label}</h1>
-            <p className="topbar__description">{activeRoute.description}</p>
+            <p className="topbar__description">
+              {activeRoute.description} {shellSummary.routeNarrative}
+            </p>
           </div>
           <div className="topbar__metrics" aria-label="Global status">
             <div className="topbar__metric-row">
-              {topbarMetrics.map((metric) => (
-                <span className="status-pill" key={metric.label}>
-                  {metric.label}
+              {shellSummary.topbarMetrics.map((metric) => (
+                <span className="status-pill" key={metric}>
+                  {metric}
                 </span>
               ))}
             </div>
-            <span className="status-kpi">Shared UI layer online</span>
+            <span className="status-kpi">{shellSummary.topbarKpi}</span>
           </div>
         </header>
         <main className="page-region">

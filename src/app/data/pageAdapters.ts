@@ -425,6 +425,101 @@ export function buildAgentsPageData(): AgentsPageData {
   };
 }
 
+export type ShellOrchestrationSummary = {
+  routeNarrative: string;
+  topbarMetrics: string[];
+  topbarKpi: string;
+  sidebarMode: string;
+  sidebarWorkers: string;
+  sidebarApprovals: string;
+};
+
+function countHandoffs(scenario: WorkflowScenario) {
+  return scenario.steps.reduce((count, step, index) => {
+    if (index === 0 || scenario.steps[index - 1].workerId === step.workerId) {
+      return count;
+    }
+
+    return count + 1;
+  }, 0);
+}
+
+function buildRouteNarrative(
+  pathname: string,
+  params: {
+    activeRuns: number;
+    activeWorkers: number;
+    handoffCount: number;
+    executeReadyRuns: number;
+    pendingApprovals: number;
+    blockedPolicies: number;
+    exceptionScenarios: number;
+    workerCount: number;
+    scenarioCount: number;
+  },
+) {
+  switch (pathname) {
+    case "/agents":
+      return `${params.activeWorkers} worker lanes are assigned across ${params.handoffCount} visible handoffs.`;
+    case "/runs":
+      return `${params.activeRuns} runs stay active with ${params.executeReadyRuns} execute-ready lanes in motion.`;
+    case "/approvals":
+      return `${params.pendingApprovals} human gate(s) are currently pausing worker execution.`;
+    case "/replay":
+      return `${params.handoffCount} worker handoffs are already preserved for replay-facing inspection.`;
+    case "/policies":
+      return `${params.blockedPolicies} blocking policy outcome(s) are actively containing risky actions.`;
+    case "/finops":
+      return `${params.exceptionScenarios} FinOps exception scenario(s) remain visible under worker supervision.`;
+    case "/settings":
+      return `${params.workerCount} worker lanes and ${params.scenarioCount} seeded scenarios are loaded for deterministic demos.`;
+    default:
+      return `${params.activeWorkers} worker lanes supervise ${params.activeRuns} live runs with ${params.pendingApprovals} pending approvals.`;
+  }
+}
+
+export function buildShellOrchestrationSummary(pathname: string): ShellOrchestrationSummary {
+  const missionSnapshot = selectMissionControlSnapshot();
+  const agentsOverview = selectAgentsOverview();
+  const finOpsOverview = selectFinOpsOverview();
+  const activeWorkers = agentsOverview.workers.filter((worker) =>
+    missionSnapshot.activeScenarios.some((scenario) =>
+      scenario.steps.some((step) => step.workerId === worker.id),
+    ),
+  ).length;
+  const handoffCount = missionSnapshot.activeScenarios.reduce(
+    (total, scenario) => total + countHandoffs(scenario),
+    0,
+  );
+  const executeReadyRuns = missionSnapshot.activeScenarios.filter(
+    (scenario) => scenario.run.mode === "execute_ready",
+  ).length;
+  const shadowRuns = missionSnapshot.activeRunCount - executeReadyRuns;
+
+  return {
+    routeNarrative: buildRouteNarrative(pathname, {
+      activeRuns: missionSnapshot.activeRunCount,
+      activeWorkers,
+      handoffCount,
+      executeReadyRuns,
+      pendingApprovals: missionSnapshot.pendingApprovalCount,
+      blockedPolicies: missionSnapshot.blockedPolicyCount,
+      exceptionScenarios: finOpsOverview.exceptionScenarioCount,
+      workerCount: agentsOverview.workers.length,
+      scenarioCount: finOpsOverview.scenarios.length,
+    }),
+    topbarMetrics: [
+      `${shadowRuns} shadow`,
+      `${executeReadyRuns} execute-ready`,
+      `${missionSnapshot.pendingApprovalCount} approvals`,
+    ],
+    topbarKpi: `${activeWorkers}/${agentsOverview.workers.length} worker lanes assigned · ${handoffCount} visible handoff(s)`,
+    sidebarMode: `${shadowRuns} shadow · ${executeReadyRuns} execute-ready`,
+    sidebarWorkers: `${activeWorkers} of ${agentsOverview.workers.length} lanes assigned`,
+    sidebarApprovals: `${missionSnapshot.pendingApprovalCount} active human gates`,
+  };
+}
+
 export function buildRunsPageContent(): PageContentConfig {
   const overview = selectRunsOverview();
   const executeReadyScenario = overview.activeScenarios.find(

@@ -2,7 +2,15 @@ import { NavLink } from "react-router-dom";
 
 import { navigationSections } from "../../app/routes";
 
-export function ShellSidebar() {
+type ShellSidebarProps = {
+  summary: {
+    sidebarMode: string;
+    sidebarWorkers: string;
+    sidebarApprovals: string;
+  };
+};
+
+export function ShellSidebar({ summary }: ShellSidebarProps) {
   const routeCount = navigationSections.flatMap((section) => section.items).length;
 
   return (
@@ -23,7 +31,15 @@ export function ShellSidebar() {
       <div className="sidebar__status" aria-label="Sidebar status">
         <div className="sidebar__status-card">
           <span>Mode</span>
-          <strong>Shadow-first</strong>
+          <strong>{summary.sidebarMode}</strong>
+        </div>
+        <div className="sidebar__status-card">
+          <span>Workers</span>
+          <strong>{summary.sidebarWorkers}</strong>
+        </div>
+        <div className="sidebar__status-card">
+          <span>Approvals</span>
+          <strong>{summary.sidebarApprovals}</strong>
         </div>
         <div className="sidebar__status-card">
           <span>Routes</span>
@@ -55,8 +71,8 @@ export function ShellSidebar() {
       </nav>
 
       <div className="sidebar__footer">
-        <strong>Wave 1 shell</strong>
-        <span>Shared surfaces and route scaffolds tuned for dense operational UI.</span>
+        <strong>Wave 3 orchestration</strong>
+        <span>Shell signals now stay aligned with live worker assignments and human gates.</span>
       </div>
     </aside>
   );

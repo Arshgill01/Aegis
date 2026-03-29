@@ -77,6 +77,20 @@ export const terminalStepStatuses: readonly StepStatus[] = [
   "skipped",
 ];
 
+export interface LifecycleTransition<TStatus extends string> {
+  from?: TStatus;
+  to: TStatus;
+  changedAt: IsoTimestamp;
+  reason: string;
+  actorId?: WorkerId;
+}
+
+export interface RunStatusChange extends LifecycleTransition<RunStatus> {}
+
+export interface StepStatusChange extends LifecycleTransition<StepStatus> {
+  stepId: EntityId;
+}
+
 export interface ToolInvocation {
   id: EntityId;
   toolName: string;
@@ -107,6 +121,7 @@ export interface TaskStep {
   startedAt?: IsoTimestamp;
   completedAt?: IsoTimestamp;
   blockedReason?: string;
+  statusHistory?: StepStatusChange[];
   toolInvocations?: ToolInvocation[];
   inputArtifactIds?: EntityId[];
   outputArtifactIds?: EntityId[];
@@ -138,6 +153,7 @@ export interface WorkflowRun {
   createdAt: IsoTimestamp;
   startedAt?: IsoTimestamp;
   completedAt?: IsoTimestamp;
+  statusHistory?: RunStatusChange[];
   steps: TaskStep[];
   context: WorkflowRunContext;
   tags?: string[];

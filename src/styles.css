@@ -821,6 +821,204 @@ select {
   line-height: 1.45;
 }
 
+.run-orch__queue,
+.run-orch__groups,
+.run-orch__steps,
+.run-orch__handoffs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.72rem;
+}
+
+.run-orch__queue-item,
+.run-orch__group,
+.run-orch__step,
+.run-orch__spotlight,
+.run-orch__handoff,
+.run-orch__spotlight-stage,
+.run-orch__spotlight-owner,
+.run-orch__spotlight-summary {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(10, 13, 18, 0.76);
+}
+
+.run-orch__queue-item,
+.run-orch__group,
+.run-orch__step,
+.run-orch__spotlight,
+.run-orch__handoff,
+.run-orch__spotlight-stage,
+.run-orch__spotlight-owner,
+.run-orch__spotlight-summary {
+  padding: 0.82rem;
+}
+
+.run-orch__queue-header,
+.run-orch__step-header,
+.run-orch__spotlight-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.72rem;
+  align-items: flex-start;
+}
+
+.run-orch__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.run-orch__identity strong,
+.run-orch__queue-header strong,
+.run-orch__step-header strong,
+.run-orch__spotlight-header strong,
+.run-orch__spotlight-stage strong,
+.run-orch__spotlight-owner strong,
+.run-orch__spotlight-summary strong,
+.run-orch__group-header strong {
+  font-size: 0.94rem;
+  letter-spacing: -0.02em;
+}
+
+.run-orch__identity span,
+.run-orch__queue-header p,
+.run-orch__meta-grid span,
+.run-orch__step-header p,
+.run-orch__step-owner span,
+.run-orch__step-owner p,
+.run-orch__group-header p,
+.run-orch__spotlight-header p,
+.run-orch__spotlight-stage span,
+.run-orch__spotlight-stage p,
+.run-orch__spotlight-owner span,
+.run-orch__spotlight-owner p,
+.run-orch__spotlight-summary span,
+.run-orch__spotlight-summary p,
+.run-orch__spotlight-section > span,
+.run-orch__handoff span,
+.run-orch__empty,
+.run-orch__next-action span,
+.run-orch__next-action p {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.run-orch__queue-header p,
+.run-orch__step-header p,
+.run-orch__spotlight-header p,
+.run-orch__spotlight-stage p,
+.run-orch__spotlight-owner p,
+.run-orch__spotlight-summary p,
+.run-orch__next-action {
+  margin-top: 0.38rem;
+}
+
+.run-orch__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 0.8rem;
+  margin-top: 0.72rem;
+}
+
+.run-orch__meta-grid strong {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.9rem;
+  line-height: 1.42;
+}
+
+.run-orch__meta-grid p {
+  margin: 0.24rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.run-orch__next-action {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 0.68rem;
+}
+
+.run-orch__next-action strong {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.run-orch__spotlight {
+  display: flex;
+  flex-direction: column;
+  gap: 0.72rem;
+}
+
+.run-orch__spotlight-header {
+  padding-bottom: 0.68rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.run-orch__spotlight-stage strong,
+.run-orch__spotlight-owner strong,
+.run-orch__spotlight-summary strong {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.run-orch__spotlight-section {
+  display: grid;
+  gap: 0.58rem;
+}
+
+.run-orch__handoff p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.46;
+}
+
+.run-orch__watchpoints {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.46rem;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.run-orch__group {
+  display: grid;
+  gap: 0.68rem;
+}
+
+.run-orch__group-header {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.run-orch__step {
+  display: grid;
+  gap: 0.62rem;
+}
+
+.run-orch__step-owner {
+  display: grid;
+  gap: 0.18rem;
+  padding-top: 0.62rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.run-orch__step-handoff {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 1200px) {
   .app-shell {
     grid-template-columns: 280px minmax(0, 1fr);
@@ -905,6 +1103,16 @@ select {
   }
 
   .mission-run__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .run-orch__queue-header,
+  .run-orch__step-header,
+  .run-orch__spotlight-header {
+    flex-direction: column;
+  }
+
+  .run-orch__meta-grid {
     grid-template-columns: 1fr;
   }
 }

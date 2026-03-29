@@ -19,6 +19,7 @@ import {
   selectRunsOverview,
 } from "../../domain/selectors";
 import type { PageContentConfig } from "../../pages/pageContent";
+import type { RunsPageData, StepGroup, StepItem } from "../../pages/runs/runPageData";
 import type {
   MissionControlPageData,
   MissionTone,
@@ -63,6 +64,18 @@ function formatStepStatus(status: StepStatus) {
     default:
       return "Queued";
   }
+}
+
+function toneForStepStatus(status: StepStatus): "neutral" | "attention" | "positive" {
+  if (status === "completed") {
+    return "positive";
+  }
+
+  if (status === "waiting_for_approval" || status === "blocked") {
+    return "attention";
+  }
+
+  return "neutral";
 }
 
 function formatRunStatus(status: WorkflowScenario["run"]["status"]) {
@@ -120,6 +133,45 @@ function buildPostureSignal(
 function approvalScenario(approval: ApprovalRequest) {
   return getScenarioByRunId(approval.runId);
 }
+
+type StepGroupKey = StepGroup["key"];
+
+function groupForStepStatus(status: StepStatus): StepGroupKey {
+  if (status === "completed") {
+    return "completed";
+  }
+
+  if (status === "running") {
+    return "in_flight";
+  }
+
+  if (status === "waiting_for_approval" || status === "blocked") {
+    return "gated";
+  }
+
+  return "queued";
+}
+
+const stepGroupOrder: StepGroupKey[] = ["completed", "in_flight", "gated", "queued"];
+
+const stepGroupLabels: Record<StepGroupKey, { label: string; detail: string }> = {
+  completed: {
+    label: "Completed stages",
+    detail: "Ownership and outputs already captured",
+  },
+  in_flight: {
+    label: "In-flight stages",
+    detail: "Current worker actively advancing the run",
+  },
+  gated: {
+    label: "Gated stages",
+    detail: "Waiting on approval or unresolved exception",
+  },
+  queued: {
+    label: "Queued next stages",
+    detail: "Prepared but not yet owned by an active worker",
+  },
+};
 
 export function buildMissionControlPageData(): MissionControlPageData {
   const snapshot = selectMissionControlSnapshot();
@@ -292,17 +344,48 @@ export function buildAgentsPageContent(): PageContentConfig {
   };
 }
 
-export function buildRunsPageContent(): PageContentConfig {
+export function buildRunsPageData(): RunsPageData {
   const overview = selectRunsOverview();
-  const executeReadyScenario = overview.activeScenarios.find(
-    (scenario) => scenario.run.mode === "execute_ready",
-  );
+  const spotlightSteps: StepItem[] = overview.spotlight.steps.map((step, index) => {
+    const worker = getWorkerById(step.workerId);
+    const previousStep = overview.spotlight.steps[index - 1];
+    const previousWorker = previousStep ? getWorkerById(previousStep.workerId) : undefined;
+    const handoffFrom =
+      previousStep && previousStep.workerId !== step.workerId
+        ? previousWorker?.name ?? "Previous worker"
+        : undefined;
+
+    return {
+      id: step.id,
+      title: step.title,
+      summary: step.summary,
+      statusLabel: formatStepStatus(step.status),
+      workerName: worker?.name ?? "Unknown worker",
+      workerRole: worker?.role ?? "Unassigned role",
+      handoffFrom,
+    };
+  });
+  const groupedSteps: StepGroup[] = stepGroupOrder
+    .map((key) => ({
+      key,
+      ...stepGroupLabels[key],
+      items: spotlightSteps.filter((_, index) => groupForStepStatus(overview.spotlight.steps[index].status) === key),
+    }))
+    .filter((group) => group.items.length > 0);
+  const activeStep =
+    spotlightSteps.find(
+      (step, index) => toneForStepStatus(overview.spotlight.steps[index].status) !== "positive",
+    ) ?? spotlightSteps[spotlightSteps.length - 1];
+  const spotlightOwner = getWorkerById(overview.spotlight.run.ownerWorkerId);
+  const completedSpotlightSteps = overview.spotlight.steps.filter(
+    (step) => step.status === "completed",
+  ).length;
 
   return {
     eyebrow: "Execution Surface",
-    title: "Runs, tasks, and workflow progression",
+    title: "Run detail and worker orchestration",
     description:
-      "The queue and detail column now reflect seeded workflow runs, step states, and worker handoffs instead of generic placeholder posture.",
+      "Run surfaces now expose worker ownership, stage progression, and explicit handoffs so orchestration remains visible while runs move or pause.",
     summaryCards: [
       { label: "Active runs", value: `${overview.openRunCount} in motion` },
       {
@@ -318,30 +401,60 @@ export function buildRunsPageContent(): PageContentConfig {
       },
     ],
     signals: [
-      { label: "Showcase run", detail: overview.spotlight.run.id },
+      { label: "Spotlight run", detail: overview.spotlight.run.id },
       {
-        label: "Next release lane",
-        detail: executeReadyScenario
-          ? `${executeReadyScenario.run.workflow} in ${etaLabel(executeReadyScenario.run.etaMinutes)}`
-          : "No execute-ready run staged",
+        label: "Current owner",
+        detail: spotlightOwner?.name ?? "Unknown worker",
+      },
+      {
+        label: "Active stage",
+        detail: activeStep.title,
       },
     ],
-    primaryTitle: "Seeded run queue",
-    primaryEyebrow: "Route-facing queue",
-    primaryItems: overview.activeScenarios.map((scenario) => ({
-      title: `${scenario.run.id} · ${scenario.run.workflow}`,
-      detail: `${scenario.run.accountName}. ${scenario.run.currentStage}. Owner: ${workerName(scenario.run.ownerWorkerId)}. Next: ${scenario.run.nextAction}`,
-      tag: `${formatRiskLabel(scenario.run.riskLevel)} · ${formatRunStatus(scenario.run.status)}`,
-    })),
-    secondaryTitle: "Selected run step detail",
-    secondaryEyebrow: overview.spotlight.run.id,
-    secondaryItems: overview.spotlight.steps.map((step) => ({
-      title: step.title,
-      detail: `${step.summary} ${workerName(step.workerId)} owns this step in ${formatMode(step.mode).toLowerCase()} mode.`,
-      tag: formatStepStatus(step.status),
-    })),
+    runQueue: overview.activeScenarios.map((scenario) => {
+      const completedSteps = scenario.steps.filter((step) => step.status === "completed").length;
+      const owner = getWorkerById(scenario.run.ownerWorkerId);
+
+      return {
+        id: scenario.run.id,
+        workflow: scenario.run.workflow,
+        accountName: scenario.run.accountName,
+        currentStage: scenario.run.currentStage,
+        nextAction: scenario.run.nextAction,
+        statusLabel: formatRunStatus(scenario.run.status),
+        riskLabel: `${formatRiskLabel(scenario.run.riskLevel)} risk`,
+        ownerName: owner?.name ?? "Unknown worker",
+        ownerRole: owner?.role ?? "Unassigned role",
+        etaLabel: etaLabel(scenario.run.etaMinutes),
+        completedSteps,
+        totalSteps: scenario.steps.length,
+      };
+    }),
+    spotlight: {
+      id: overview.spotlight.run.id,
+      workflow: overview.spotlight.run.workflow,
+      accountName: overview.spotlight.run.accountName,
+      statusLabel: formatRunStatus(overview.spotlight.run.status),
+      riskLabel: `${formatRiskLabel(overview.spotlight.run.riskLevel)} risk`,
+      currentStage: overview.spotlight.run.currentStage,
+      nextAction: overview.spotlight.run.nextAction,
+      ownerName: spotlightOwner?.name ?? "Unknown worker",
+      ownerRole: spotlightOwner?.role ?? "Unassigned role",
+      ownerPosture: spotlightOwner?.posture ?? "Unknown posture",
+      completionLabel: `${completedSpotlightSteps}/${overview.spotlight.steps.length} stages complete`,
+      activeStepTitle: activeStep.title,
+      handoffs: spotlightSteps
+        .filter((step) => Boolean(step.handoffFrom))
+        .map((step) => ({
+          fromWorkerName: step.handoffFrom ?? "Previous worker",
+          toWorkerName: step.workerName,
+          stepTitle: step.title,
+        })),
+      watchpoints: overview.spotlight.watchpoints,
+    },
+    stepGroups: groupedSteps,
     footerNote:
-      "Run and step data come from deterministic scenarios, keeping the route legible now while leaving room for later runtime progression.",
+      "Run progression stays deterministic and inspectable so later policy, approval, and replay waves can layer in without replacing the orchestration story.",
   };
 }
 

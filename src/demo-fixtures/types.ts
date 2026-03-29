@@ -1,3 +1,8 @@
+import type {
+  WorkerCapabilityPlaceholder,
+  WorkerOperationalSummary,
+} from "../contracts";
+
 export type WorkerId =
   | "worker-intake"
   | "worker-document-review"
@@ -61,6 +66,8 @@ export type AgentWorker = {
   supervisionModel: WorkerSupervisionModel;
   defaultQueue: string;
   specialties: string[];
+  capabilityPlaceholders?: WorkerCapabilityPlaceholder[];
+  operationalSummary?: WorkerOperationalSummary;
   handoffTargets: WorkerId[];
 };
 

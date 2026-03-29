@@ -824,7 +824,8 @@ select {
 .run-orch__queue,
 .run-orch__groups,
 .run-orch__steps,
-.run-orch__handoffs {
+.run-orch__handoffs,
+.run-orch__timeline {
   display: flex;
   flex-direction: column;
   gap: 0.72rem;
@@ -1019,6 +1020,118 @@ select {
   line-height: 1.45;
 }
 
+.run-orch__timeline-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.72rem;
+  align-items: flex-start;
+}
+
+.run-orch__timeline-dot {
+  width: 0.62rem;
+  height: 0.62rem;
+  margin-top: 0.46rem;
+  border-radius: 999px;
+}
+
+.run-orch__timeline-dot--neutral {
+  background: rgba(114, 180, 255, 0.78);
+}
+
+.run-orch__timeline-dot--attention {
+  background: rgba(255, 184, 107, 0.84);
+}
+
+.run-orch__timeline-dot--positive {
+  background: rgba(79, 210, 162, 0.84);
+}
+
+.run-orch__timeline-content {
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.run-orch__timeline-item:last-child .run-orch__timeline-content {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.run-orch__timeline-meta,
+.run-orch__timeline-footer,
+.run-orch__mode-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.run-orch__timeline-meta strong,
+.run-orch__timeline-footer strong,
+.run-orch__mode-header strong {
+  font-size: 0.94rem;
+  letter-spacing: -0.02em;
+}
+
+.run-orch__timeline-meta span,
+.run-orch__timeline-content p,
+.run-orch__timeline-footer span,
+.run-orch__mode-header span,
+.run-orch__mode-grid span,
+.run-orch__mode-next span {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.run-orch__timeline-content p {
+  margin-top: 0.38rem;
+}
+
+.run-orch__timeline-footer {
+  margin-top: 0.72rem;
+}
+
+.run-orch__mode {
+  display: grid;
+  gap: 0.74rem;
+}
+
+.run-orch__mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.68rem;
+}
+
+.run-orch__mode-grid article {
+  padding: 0.72rem 0.78rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(10, 13, 18, 0.76);
+}
+
+.run-orch__mode-grid strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1.14rem;
+  letter-spacing: -0.04em;
+}
+
+.run-orch__mode-next {
+  margin: 0;
+  padding-top: 0.68rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.run-orch__mode-next strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.94rem;
+  letter-spacing: -0.02em;
+}
+
 @media (max-width: 1200px) {
   .app-shell {
     grid-template-columns: 280px minmax(0, 1fr);
@@ -1113,6 +1226,16 @@ select {
   }
 
   .run-orch__meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .run-orch__timeline-meta,
+  .run-orch__timeline-footer,
+  .run-orch__mode-header {
+    flex-direction: column;
+  }
+
+  .run-orch__mode-grid {
     grid-template-columns: 1fr;
   }
 }

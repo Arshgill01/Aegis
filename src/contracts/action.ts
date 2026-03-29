@@ -1,5 +1,7 @@
 import type {
+  WorkerCapabilityPlaceholder,
   WorkerId,
+  WorkerOperationalSummary,
   WorkerRole,
   WorkerStageOwnership,
 } from "./workers";
@@ -56,6 +58,8 @@ export type AgentWorker = {
   stageOwnership: WorkerStageOwnership;
   handoffTargets: WorkerId[];
   defaultExecutionMode: ExecutionMode;
+  capabilities: WorkerCapabilityPlaceholder[];
+  operationalSummary: WorkerOperationalSummary;
 };
 
 export const toolInvocationStatuses = [

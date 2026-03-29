@@ -42,6 +42,47 @@ export type WorkerStageKey = (typeof workerStageKeys)[number];
 
 export type WorkerExecutionMode = "shadow" | "execute";
 
+export const workerCapabilityScopes = [
+  "intake",
+  "document",
+  "vendor",
+  "matching",
+  "policy",
+  "risk",
+  "approval",
+  "execution",
+  "audit",
+] as const;
+
+export type WorkerCapabilityScope = (typeof workerCapabilityScopes)[number];
+
+export type WorkerCapabilityPlaceholder = {
+  key: string;
+  label: string;
+  summary: string;
+  scope: WorkerCapabilityScope;
+  status: "placeholder";
+};
+
+export const workerPostures = [
+  "stable",
+  "watching",
+  "escalated",
+  "coordinating",
+  "ready",
+  "narrating",
+] as const;
+
+export type WorkerPosture = (typeof workerPostures)[number];
+
+export type WorkerOperationalSummary = {
+  posture: WorkerPosture;
+  queueDepth: number;
+  activeRunCount: number;
+  loadPercent: number;
+  headline: string;
+};
+
 export type WorkerRoleMetadata = {
   role: WorkerRole;
   label: string;
@@ -62,7 +103,23 @@ export type WorkerDefinition = {
   stageOwnership: WorkerStageOwnership;
   handoffTargets: WorkerId[];
   defaultExecutionMode: WorkerExecutionMode;
+  capabilities: WorkerCapabilityPlaceholder[];
 };
+
+function capability(
+  key: string,
+  label: string,
+  summary: string,
+  scope: WorkerCapabilityScope,
+): WorkerCapabilityPlaceholder {
+  return {
+    key,
+    label,
+    summary,
+    scope,
+    status: "placeholder",
+  };
+}
 
 export const workerRoleMetadata: Record<WorkerRole, WorkerRoleMetadata> = {
   intake: {
@@ -126,6 +183,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-document-review", "worker-vendor-review", "worker-po-match"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "normalize-packet",
+        "Normalize packet",
+        "Parse inbound invoice, attachment, and sender context into a deterministic run packet.",
+        "intake",
+      ),
+      capability(
+        "artifact-provenance",
+        "Artifact provenance capture",
+        "Attach source and receipt metadata so downstream reviewers can trust packet origin.",
+        "intake",
+      ),
+      capability(
+        "incomplete-routing",
+        "Incomplete packet routing",
+        "Route partial packets into document or vendor review lanes without losing context.",
+        "intake",
+      ),
+    ],
   },
   "worker-document-review": {
     id: "worker-document-review",
@@ -140,6 +217,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-po-match", "worker-policy-review", "worker-risk"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "field-validation",
+        "Structured field validation",
+        "Confirm extracted document fields and key totals before matching or policy checks.",
+        "document",
+      ),
+      capability(
+        "evidence-linkage",
+        "Evidence linkage",
+        "Maintain traceable links between extracted values and source artifacts.",
+        "document",
+      ),
+      capability(
+        "document-gap-detection",
+        "Document gap detection",
+        "Identify missing support docs that should pause progression before execution lanes.",
+        "document",
+      ),
+    ],
   },
   "worker-vendor-review": {
     id: "worker-vendor-review",
@@ -154,6 +251,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-policy-review", "worker-risk", "worker-approval-coordinator"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "vendor-identity-resolution",
+        "Vendor identity resolution",
+        "Map submitted vendor details to a trusted master-data profile or mark as unresolved.",
+        "vendor",
+      ),
+      capability(
+        "remittance-drift-check",
+        "Remittance drift check",
+        "Compare destination bank and beneficiary details against recent settled history.",
+        "vendor",
+      ),
+      capability(
+        "onboarding-posture-check",
+        "Onboarding posture check",
+        "Verify vendor onboarding status before payment-sensitive paths continue.",
+        "vendor",
+      ),
+    ],
   },
   "worker-po-match": {
     id: "worker-po-match",
@@ -168,6 +285,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-policy-review", "worker-risk", "worker-approval-coordinator"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "three-way-match",
+        "Three-way match",
+        "Compare invoice, PO, and receiving artifacts for quantity and amount consistency.",
+        "matching",
+      ),
+      capability(
+        "variance-quantification",
+        "Variance quantification",
+        "Calculate mismatch percentage and amount delta for risk and approval context.",
+        "matching",
+      ),
+      capability(
+        "receiving-proof-check",
+        "Receiving proof check",
+        "Confirm goods receipt or completion evidence before controlled release.",
+        "matching",
+      ),
+    ],
   },
   "worker-policy-review": {
     id: "worker-policy-review",
@@ -182,6 +319,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-risk", "worker-approval-coordinator"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "policy-scope-resolution",
+        "Policy scope resolution",
+        "Determine which policy bundles apply to the current step and action lane.",
+        "policy",
+      ),
+      capability(
+        "decision-path-marking",
+        "Decision path marking",
+        "Mark the step outcome path as allow, escalate, or block with explicit rationale hooks.",
+        "policy",
+      ),
+      capability(
+        "control-reference-packing",
+        "Control reference packing",
+        "Attach policy references so approvals and replay can cite concrete controls.",
+        "policy",
+      ),
+    ],
   },
   "worker-risk": {
     id: "worker-risk",
@@ -196,6 +353,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-approval-coordinator", "worker-execution"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "risk-factor-evaluation",
+        "Risk factor evaluation",
+        "Assess severity from mismatches, vendor drift, and missing evidence indicators.",
+        "risk",
+      ),
+      capability(
+        "exception-framing",
+        "Exception framing",
+        "Produce reviewer-legible exception summaries tied to affected records and artifacts.",
+        "risk",
+      ),
+      capability(
+        "containment-routing",
+        "Containment routing",
+        "Route risky actions into approval or block lanes before execution can proceed.",
+        "risk",
+      ),
+    ],
   },
   "worker-approval-coordinator": {
     id: "worker-approval-coordinator",
@@ -210,6 +387,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-risk", "worker-execution", "worker-audit-narrator"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "approval-packet-assembly",
+        "Approval packet assembly",
+        "Package the action request, evidence bundle, and risk context for named reviewers.",
+        "approval",
+      ),
+      capability(
+        "review-ownership-tracking",
+        "Review ownership tracking",
+        "Track assignee and queue posture so pending gates remain visible in operations.",
+        "approval",
+      ),
+      capability(
+        "resume-path-coordination",
+        "Resume path coordination",
+        "Apply decision outcomes and hand off safely into execute or re-triage lanes.",
+        "approval",
+      ),
+    ],
   },
   "worker-execution": {
     id: "worker-execution",
@@ -224,6 +421,26 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-audit-narrator", "worker-risk"],
     defaultExecutionMode: "execute",
+    capabilities: [
+      capability(
+        "controlled-posting",
+        "Controlled posting",
+        "Execute approved downstream system actions in the supervised execute lane.",
+        "execution",
+      ),
+      capability(
+        "release-gate-check",
+        "Release gate check",
+        "Verify approvals, policy refs, and artifacts are satisfied before action release.",
+        "execution",
+      ),
+      capability(
+        "execution-receipt-capture",
+        "Execution receipt capture",
+        "Attach output references required by replay and audit surfaces after completion.",
+        "execution",
+      ),
+    ],
   },
   "worker-audit-narrator": {
     id: "worker-audit-narrator",
@@ -238,10 +455,96 @@ export const workerRegistry: Record<WorkerId, WorkerDefinition> = {
     },
     handoffTargets: ["worker-risk", "worker-approval-coordinator"],
     defaultExecutionMode: "shadow",
+    capabilities: [
+      capability(
+        "timeline-narration",
+        "Timeline narration",
+        "Convert raw worker events into operator-legible timeline moments.",
+        "audit",
+      ),
+      capability(
+        "receipt-synthesis",
+        "Receipt synthesis",
+        "Build receipt-level summaries that preserve worker decisions and control references.",
+        "audit",
+      ),
+      capability(
+        "replay-framing",
+        "Replay framing",
+        "Prepare concise replay frame text so post-run inspection remains high signal.",
+        "audit",
+      ),
+    ],
   },
 };
 
 export const workerRegistryList: WorkerDefinition[] = workerIds.map((workerId) => workerRegistry[workerId]);
+
+export const workerOperationalSummaryDefaults: Record<WorkerId, WorkerOperationalSummary> = {
+  "worker-intake": {
+    posture: "stable",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No queued intake packets.",
+  },
+  "worker-document-review": {
+    posture: "stable",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No active document validation runs.",
+  },
+  "worker-vendor-review": {
+    posture: "watching",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No unresolved vendor checks.",
+  },
+  "worker-po-match": {
+    posture: "stable",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No pending PO variance reviews.",
+  },
+  "worker-policy-review": {
+    posture: "watching",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No policy checkpoints in queue.",
+  },
+  "worker-risk": {
+    posture: "watching",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No escalated risk items.",
+  },
+  "worker-approval-coordinator": {
+    posture: "coordinating",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No pending approvals are currently held.",
+  },
+  "worker-execution": {
+    posture: "ready",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No execute-lane packets are staged.",
+  },
+  "worker-audit-narrator": {
+    posture: "narrating",
+    queueDepth: 0,
+    activeRunCount: 0,
+    loadPercent: 0,
+    headline: "No replay summary drafting in progress.",
+  },
+};
 
 export function getWorkerDefinition(workerId: WorkerId) {
   return workerRegistry[workerId];

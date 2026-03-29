@@ -4,9 +4,8 @@ import { navigationSections } from "../../app/routes";
 import { ShellSidebar } from "./ShellSidebar";
 
 const topbarMetrics = [
-  { label: "Runtime Posture", value: "Shell mode" },
-  { label: "Approval Surface", value: "Awaiting seeded cases" },
-  { label: "Policy Posture", value: "Guardrails scaffolded" },
+  { label: "Shadow mode" },
+  { label: "Active" },
 ];
 
 export function AppShell() {
@@ -23,18 +22,20 @@ export function AppShell() {
       <ShellSidebar />
       <div className="app-shell__content">
         <header className="topbar">
-          <div>
+          <div className="topbar__copy">
             <p className="eyebrow">Aegis Control Tower</p>
             <h1>{activeRoute.label}</h1>
             <p className="topbar__description">{activeRoute.description}</p>
           </div>
           <div className="topbar__metrics" aria-label="Global status">
-            {topbarMetrics.map((metric) => (
-              <div className="metric-pill" key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{metric.value}</strong>
-              </div>
-            ))}
+            <div className="topbar__metric-row">
+              {topbarMetrics.map((metric) => (
+                <span className="status-pill" key={metric.label}>
+                  {metric.label}
+                </span>
+              ))}
+            </div>
+            <span className="status-kpi">Shared UI layer online</span>
           </div>
         </header>
         <main className="page-region">

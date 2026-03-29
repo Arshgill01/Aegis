@@ -35,7 +35,7 @@ export function PageShell({
   return (
     <div className="page-shell">
       <section className="hero-panel">
-        <div>
+        <div className="hero-panel__copy">
           <p className="eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
           <p className="hero-panel__description">{description}</p>
@@ -59,7 +59,7 @@ export function PageShell({
             key={card.label}
             className={`summary-card summary-card--${card.tone ?? "neutral"}`}
           >
-            <span>{card.label}</span>
+            <span className="summary-card__signal">{card.label}</span>
             <strong>{card.value}</strong>
             {card.detail ? <p>{card.detail}</p> : null}
           </article>

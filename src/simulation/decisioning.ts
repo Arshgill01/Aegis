@@ -514,16 +514,22 @@ export function buildScenarioDecisionOutputs(scenario: WorkflowScenario): Scenar
   const strongestStepOutcome = pickHighestOutcome(stepDecisions);
 
   if (outcomeRank[strongestStepOutcome] > outcomeRank[finalDecision.outcome]) {
+    const strongestSummary = `${decisionLabel(strongestStepOutcome)} (${finalDecision.severity}, score ${finalDecision.score})`;
+    const strongestExplanation =
+      strongestStepOutcome === "blocked"
+        ? `Action is blocked because one or more workflow steps are blocked or denied. Evidence references: ${finalDecision.evidence.length}.`
+        : strongestStepOutcome === "requires_approval"
+          ? `Action requires approval because one or more workflow steps opened a named control gate. Evidence references: ${finalDecision.evidence.length}.`
+          : finalDecision.explanation;
+
     return {
       stepDecisions,
       finalDecision: {
         ...finalDecision,
         outcome: strongestStepOutcome,
-        summary: `${decisionLabel(strongestStepOutcome)} (${finalDecision.severity}, score ${finalDecision.score})`,
-        explanation:
-          strongestStepOutcome === "blocked"
-            ? `Action is blocked because one or more workflow steps are blocked or denied. Evidence references: ${finalDecision.evidence.length}.`
-            : finalDecision.explanation,
+        summary: strongestSummary,
+        explanation: strongestExplanation,
+        recommendedAction: recommendation(strongestStepOutcome),
         requiresApproval: strongestStepOutcome === "requires_approval",
         auditEmphasis: true,
       },

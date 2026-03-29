@@ -5,6 +5,7 @@ import type {
   WorkerRole,
   WorkerStageOwnership,
 } from "./workers";
+import type { PermissionEvaluation } from "./permission";
 
 export const executionModes = ["shadow", "execute"] as const;
 export type ExecutionMode = (typeof executionModes)[number];
@@ -100,6 +101,7 @@ export type TaskStep = {
   updatedAt: string;
   outcomeSummary?: string;
   blockedReason?: string;
+  permissionEvaluations: PermissionEvaluation[];
 };
 
 export type WorkflowStage = {
@@ -175,6 +177,7 @@ export type WorkflowRun = {
   controlRefs: ControlReference[];
   eventIds: string[];
   steps: TaskStep[];
+  permissionEvaluations: PermissionEvaluation[];
   orchestration: WorkflowRunOrchestration;
   createdAt: string;
   startedAt?: string;

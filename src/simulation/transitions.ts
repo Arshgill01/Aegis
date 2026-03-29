@@ -1,6 +1,7 @@
 import type {
   ControlReference,
   ExecutionMode,
+  PermissionEvaluation,
   RunStatus,
   StepStatus,
   TaskStep,
@@ -14,6 +15,12 @@ import {
   resolveCurrentStageId,
   transitionStageForStep,
 } from "./orchestration";
+import {
+  createPermissionControlRef,
+  evaluateExecutionModePermission,
+  evaluateStepTransitionPermission,
+  evaluateWorkerHandoffPermission,
+} from "./permissions";
 
 export const allowedRunTransitions: Record<RunStatus, readonly RunStatus[]> = {
   queued: ["planning", "cancelled"],
@@ -118,6 +125,13 @@ function mergeControlRefs(
   });
 
   return [...merged.values()];
+}
+
+function appendPermissionEvaluation(
+  evaluations: PermissionEvaluation[] | undefined,
+  evaluation: PermissionEvaluation,
+) {
+  return [...(evaluations ?? []), evaluation];
 }
 
 function syncToolInvocationsForStatus(
@@ -250,31 +264,67 @@ export function transitionStepStatus(
     throw new Error(`Unknown step: ${stepId}`);
   }
 
+  const actingWorkerId = workerId ?? previousStep.assignedWorkerId;
+  const permissionEvaluation = evaluateStepTransitionPermission({
+    run,
+    step: previousStep,
+    toStatus,
+    workerId: actingWorkerId,
+    occurredAt,
+  });
+  const permissionControlRef = createPermissionControlRef(permissionEvaluation);
+
+  let effectiveStatus = toStatus;
+  if (
+    permissionEvaluation.shouldGate
+    && (toStatus === "in_progress" || toStatus === "completed")
+  ) {
+    effectiveStatus = permissionEvaluation.outcome === "block" ? "blocked" : "waiting";
+  }
+
   const { run: updatedRun, step } = updateStep(run, stepId, (currentStep) => {
-    assertStepTransitionAllowed(currentStep.status, toStatus);
+    assertStepTransitionAllowed(currentStep.status, effectiveStatus);
 
     return {
       ...currentStep,
-      status: toStatus,
-      assignedWorkerId: workerId ?? currentStep.assignedWorkerId,
+      status: effectiveStatus,
+      assignedWorkerId: actingWorkerId,
       startedAt:
-        currentStep.startedAt ?? (toStatus === "in_progress" ? occurredAt : currentStep.startedAt),
+        currentStep.startedAt
+        ?? (effectiveStatus === "in_progress" ? occurredAt : currentStep.startedAt),
       completedAt:
-        toStatus === "completed" || toStatus === "failed" || toStatus === "cancelled"
+        effectiveStatus === "completed" || effectiveStatus === "failed" || effectiveStatus === "cancelled"
           ? occurredAt
           : currentStep.completedAt,
       updatedAt: occurredAt,
-      outcomeSummary: outcomeSummary ?? currentStep.outcomeSummary,
-      blockedReason: blockedReason ?? currentStep.blockedReason,
-      controlRefs: mergeControlRefs(currentStep.controlRefs, controlRefs),
-      toolInvocations: syncToolInvocationsForStatus(currentStep.toolInvocations, toStatus, occurredAt),
+      outcomeSummary:
+        permissionEvaluation.shouldGate
+          ? outcomeSummary ?? `Permission gate: ${permissionEvaluation.reason}`
+          : outcomeSummary ?? currentStep.outcomeSummary,
+      blockedReason:
+        permissionEvaluation.shouldGate
+          ? permissionEvaluation.reason
+          : blockedReason ?? currentStep.blockedReason,
+      controlRefs: mergeControlRefs(
+        mergeControlRefs(currentStep.controlRefs, [permissionControlRef]),
+        controlRefs,
+      ),
+      permissionEvaluations: appendPermissionEvaluation(
+        currentStep.permissionEvaluations,
+        permissionEvaluation,
+      ),
+      toolInvocations: syncToolInvocationsForStatus(
+        currentStep.toolInvocations,
+        effectiveStatus,
+        occurredAt,
+      ),
     };
   });
 
-  const nextWorkerId = workerId ?? step.assignedWorkerId;
+  const nextWorkerId = actingWorkerId;
   const stageTransition = transitionStageForStep(updatedRun.orchestration, {
     stepId,
-    toStatus,
+    toStatus: effectiveStatus,
     workerId: nextWorkerId,
     executionMode: step.executionMode,
     occurredAt,
@@ -286,14 +336,27 @@ export function transitionStepStatus(
       currentStepId: stepId,
       currentWorkerId: nextWorkerId,
       currentStageId: stageTransition.orchestration.currentStageId,
-      startedAt: updatedRun.startedAt ?? (toStatus === "in_progress" ? occurredAt : updatedRun.startedAt),
+      startedAt:
+        updatedRun.startedAt
+        ?? (effectiveStatus === "in_progress" ? occurredAt : updatedRun.startedAt),
       updatedAt: occurredAt,
-      controlRefs: mergeControlRefs(updatedRun.controlRefs, controlRefs),
+      controlRefs: mergeControlRefs(
+        mergeControlRefs(updatedRun.controlRefs, [permissionControlRef]),
+        controlRefs,
+      ),
+      permissionEvaluations: appendPermissionEvaluation(
+        updatedRun.permissionEvaluations,
+        permissionEvaluation,
+      ),
       orchestration: stageTransition.orchestration,
     },
     step,
     stage: stageTransition.stage,
     stageTransition: stageTransition.transition,
+    requestedStatus: toStatus,
+    effectiveStatus,
+    gated: permissionEvaluation.shouldGate,
+    permissionEvaluation,
     previousStatus: previousStep.status,
   };
 }
@@ -305,11 +368,63 @@ export function assignWorkerToStep(run: WorkflowRun, { stepId, workerId, occurre
     throw new Error(`Unknown step: ${stepId}`);
   }
 
-  const { run: updatedRun, step } = updateStep(run, stepId, (currentStep) => ({
-    ...currentStep,
-    assignedWorkerId: workerId,
+  const permissionEvaluation = evaluateWorkerHandoffPermission({
+    run,
+    step: previousStep,
+    fromWorkerId: previousStep.assignedWorkerId,
+    toWorkerId: workerId,
+    occurredAt,
+  });
+  const permissionControlRef = createPermissionControlRef(permissionEvaluation);
+
+  const { run: updatedRun, step } = updateStep(run, stepId, (currentStep) => {
+    const nextAssignedWorkerId = permissionEvaluation.shouldGate
+      ? currentStep.assignedWorkerId
+      : workerId;
+
+    return {
+      ...currentStep,
+      assignedWorkerId: nextAssignedWorkerId,
+      updatedAt: occurredAt,
+      blockedReason:
+        permissionEvaluation.shouldGate
+          ? permissionEvaluation.reason
+          : currentStep.blockedReason,
+      controlRefs: mergeControlRefs(currentStep.controlRefs, [permissionControlRef]),
+      permissionEvaluations: appendPermissionEvaluation(
+        currentStep.permissionEvaluations,
+        permissionEvaluation,
+      ),
+    };
+  });
+
+  const runWithPermission: WorkflowRun = {
+    ...updatedRun,
+    currentStepId: stepId,
     updatedAt: occurredAt,
-  }));
+    controlRefs: mergeControlRefs(updatedRun.controlRefs, [permissionControlRef]),
+    permissionEvaluations: appendPermissionEvaluation(
+      updatedRun.permissionEvaluations,
+      permissionEvaluation,
+    ),
+  };
+
+  const stage = run.orchestration.stages.find((currentStage) => currentStage.stepId === stepId);
+  if (!stage) {
+    throw new Error(`Unknown stage for step: ${stepId}`);
+  }
+
+  if (permissionEvaluation.shouldGate) {
+    return {
+      run: runWithPermission,
+      step,
+      stage,
+      handoff: undefined,
+      gated: true,
+      permissionEvaluation,
+      previousWorkerId: previousStep.assignedWorkerId,
+    };
+  }
 
   const handoffTransition = handoffStageOwner(updatedRun.orchestration, {
     stepId,
@@ -320,7 +435,7 @@ export function assignWorkerToStep(run: WorkflowRun, { stepId, workerId, occurre
 
   return {
     run: {
-      ...updatedRun,
+      ...runWithPermission,
       currentStepId: stepId,
       currentWorkerId: workerId,
       currentStageId: handoffTransition.orchestration.currentStageId,
@@ -330,6 +445,8 @@ export function assignWorkerToStep(run: WorkflowRun, { stepId, workerId, occurre
     step,
     stage: handoffTransition.stage,
     handoff: handoffTransition.handoff,
+    gated: false,
+    permissionEvaluation,
     previousWorkerId: handoffTransition.previousWorkerId ?? previousStep.assignedWorkerId,
   };
 }
@@ -369,8 +486,41 @@ export function setExecutionMode(
   { executionMode, occurredAt, stepId }: ModeChangeInput,
 ) {
   const previousExecutionMode = run.executionMode;
+  const targetStep = stepId ? run.steps.find((step) => step.id === stepId) : undefined;
+
+  if (stepId && !targetStep) {
+    throw new Error(`Unknown step: ${stepId}`);
+  }
+
+  const permissionEvaluation = evaluateExecutionModePermission({
+    run,
+    step: targetStep,
+    fromMode: previousExecutionMode,
+    toMode: executionMode,
+    workerId: targetStep?.assignedWorkerId ?? run.currentWorkerId,
+    occurredAt,
+  });
+  const permissionControlRef = createPermissionControlRef(permissionEvaluation);
 
   if (!stepId) {
+    if (permissionEvaluation.shouldGate) {
+      return {
+        run: {
+          ...run,
+          updatedAt: occurredAt,
+          controlRefs: mergeControlRefs(run.controlRefs, [permissionControlRef]),
+          permissionEvaluations: appendPermissionEvaluation(
+            run.permissionEvaluations,
+            permissionEvaluation,
+          ),
+        },
+        previousExecutionMode,
+        modeTransition: undefined,
+        gated: true,
+        permissionEvaluation,
+      };
+    }
+
     const modeUpdate = applyExecutionModeToOrchestration(run.orchestration, {
       fromMode: previousExecutionMode,
       toMode: executionMode,
@@ -384,22 +534,63 @@ export function setExecutionMode(
         executionMode,
         currentStageId: modeUpdate.orchestration.currentStageId,
         updatedAt: occurredAt,
+        controlRefs: mergeControlRefs(run.controlRefs, [permissionControlRef]),
+        permissionEvaluations: appendPermissionEvaluation(
+          run.permissionEvaluations,
+          permissionEvaluation,
+        ),
         orchestration: modeUpdate.orchestration,
       },
       previousExecutionMode,
       modeTransition: modeUpdate.modeTransition,
+      gated: false,
+      permissionEvaluation,
     };
   }
 
-  const { run: updatedRun, step } = updateStep(run, stepId, (currentStep) => ({
-    ...currentStep,
-    executionMode,
-    updatedAt: occurredAt,
-    toolInvocations: currentStep.toolInvocations.map((toolInvocation) => ({
-      ...toolInvocation,
-      executionMode,
-    })),
-  }));
+  const { run: updatedRun, step } = updateStep(run, stepId, (currentStep) => {
+    const nextMode = permissionEvaluation.shouldGate ? currentStep.executionMode : executionMode;
+
+    return {
+      ...currentStep,
+      executionMode: nextMode,
+      updatedAt: occurredAt,
+      blockedReason:
+        permissionEvaluation.shouldGate
+          ? permissionEvaluation.reason
+          : currentStep.blockedReason,
+      controlRefs: mergeControlRefs(currentStep.controlRefs, [permissionControlRef]),
+      permissionEvaluations: appendPermissionEvaluation(
+        currentStep.permissionEvaluations,
+        permissionEvaluation,
+      ),
+      toolInvocations: currentStep.toolInvocations.map((toolInvocation) => ({
+        ...toolInvocation,
+        executionMode: nextMode,
+      })),
+    };
+  });
+
+  if (permissionEvaluation.shouldGate) {
+    return {
+      run: {
+        ...updatedRun,
+        currentStepId: stepId,
+        currentWorkerId: step.assignedWorkerId,
+        updatedAt: occurredAt,
+        controlRefs: mergeControlRefs(updatedRun.controlRefs, [permissionControlRef]),
+        permissionEvaluations: appendPermissionEvaluation(
+          updatedRun.permissionEvaluations,
+          permissionEvaluation,
+        ),
+      },
+      step,
+      previousExecutionMode,
+      modeTransition: undefined,
+      gated: true,
+      permissionEvaluation,
+    };
+  }
 
   const modeUpdate = applyExecutionModeToOrchestration(updatedRun.orchestration, {
     fromMode: previousExecutionMode,
@@ -417,10 +608,17 @@ export function setExecutionMode(
       currentWorkerId: step.assignedWorkerId,
       currentStageId: modeUpdate.orchestration.currentStageId,
       updatedAt: occurredAt,
+      controlRefs: mergeControlRefs(updatedRun.controlRefs, [permissionControlRef]),
+      permissionEvaluations: appendPermissionEvaluation(
+        updatedRun.permissionEvaluations,
+        permissionEvaluation,
+      ),
       orchestration: modeUpdate.orchestration,
     },
     step,
     previousExecutionMode,
     modeTransition: modeUpdate.modeTransition,
+    gated: false,
+    permissionEvaluation,
   };
 }

@@ -96,6 +96,7 @@ function createRunSteps(scenario: WorkflowScenario): TaskStep[] {
       artifactIds: [...stepTemplate.artifactIds],
       toolInvocations: createToolInvocations(stepTemplate.toolInvocations),
       controlRefs: [...stepTemplate.controlRefs],
+      permissionEvaluations: [],
       updatedAt: scenario.seedTime,
     }));
 }
@@ -120,6 +121,7 @@ export function createWorkflowRunFromScenario(scenario: WorkflowScenario): Workf
     controlRefs: [],
     eventIds: [],
     steps,
+    permissionEvaluations: [],
     orchestration,
     createdAt: scenario.seedTime,
     updatedAt: scenario.seedTime,
@@ -299,23 +301,32 @@ function applyStepStatusDirective(state: SimulationState, directive: ScenarioSte
     {
       kind: "step.status_changed",
       stepId: directive.stepId,
-      title: directive.title,
-      detail: directive.detail,
+      title: transition.gated
+        ? `${directive.title} (permission gated)`
+        : directive.title,
+      detail: transition.gated
+        ? `${directive.detail} Gate reason: ${transition.permissionEvaluation.reason}`
+        : directive.detail,
       actor: findWorkerActor(state.scenario, directive.workerId ?? transition.step.assignedWorkerId),
       executionMode: transition.step.executionMode,
       occurredAt,
       stateChange: {
         entity: "step",
         from: transition.previousStatus,
-        to: directive.toStatus,
+        to: transition.effectiveStatus,
       },
-      stepStatus: directive.toStatus,
+      stepStatus: transition.effectiveStatus,
       artifactIds: [...transition.step.artifactIds],
       controlRefs: directive.controlRefs ?? transition.step.controlRefs,
       metadata: {
         stageId: transition.stage.id,
         stageStatus: transition.stage.status,
         stageTransitionId: transition.stageTransition?.id ?? "unchanged",
+        permissionEvaluationId: transition.permissionEvaluation.id,
+        permissionOutcome: transition.permissionEvaluation.outcome,
+        permissionGated: transition.gated,
+        requestedStatus: transition.requestedStatus,
+        effectiveStatus: transition.effectiveStatus,
         currentStageId: transition.run.currentStageId ?? "none",
         currentWorkerId: transition.run.currentWorkerId ?? "none",
         ...directive.metadata,
@@ -340,8 +351,12 @@ function applyHandoffDirective(state: SimulationState, directive: ScenarioHandof
     {
       kind: "step.handoff",
       stepId: directive.stepId,
-      title: directive.title,
-      detail: directive.detail,
+      title: transition.gated
+        ? `${directive.title} (permission gated)`
+        : directive.title,
+      detail: transition.gated
+        ? `${directive.detail} Gate reason: ${transition.permissionEvaluation.reason}`
+        : directive.detail,
       actor: findWorkerActor(
         state.scenario,
         directive.workerId ?? transition.previousWorkerId ?? directive.nextWorkerId,
@@ -349,13 +364,16 @@ function applyHandoffDirective(state: SimulationState, directive: ScenarioHandof
       executionMode: transition.step.executionMode,
       occurredAt,
       artifactIds: [...transition.step.artifactIds],
-      controlRefs: directive.controlRefs ?? [],
+      controlRefs: directive.controlRefs ?? transition.step.controlRefs,
       metadata: {
-        handoffId: transition.handoff.id,
-        handoffSequence: transition.handoff.sequence,
-        stageId: transition.handoff.stageId,
+        handoffId: transition.handoff?.id ?? "gated",
+        handoffSequence: transition.handoff?.sequence ?? -1,
+        stageId: transition.handoff?.stageId ?? transition.stage.id,
         previousWorkerId: transition.previousWorkerId ?? "none",
         nextWorkerId: directive.nextWorkerId,
+        permissionEvaluationId: transition.permissionEvaluation.id,
+        permissionOutcome: transition.permissionEvaluation.outcome,
+        permissionGated: transition.gated,
         currentStageId: transition.run.currentStageId ?? "none",
         ...directive.metadata,
       },
@@ -425,23 +443,30 @@ function applyModeDirective(state: SimulationState, directive: ScenarioModeDirec
     {
       kind: "mode.changed",
       stepId: directive.stepId,
-      title: directive.title,
-      detail: directive.detail,
+      title: transition.gated
+        ? `${directive.title} (permission gated)`
+        : directive.title,
+      detail: transition.gated
+        ? `${directive.detail} Gate reason: ${transition.permissionEvaluation.reason}`
+        : directive.detail,
       actor: findWorkerActor(state.scenario, directive.workerId ?? transition.run.currentWorkerId),
-      executionMode: directive.mode,
+      executionMode: transition.run.executionMode,
       occurredAt,
       stateChange: {
         entity: "mode",
         from: transition.previousExecutionMode,
-        to: directive.mode,
+        to: transition.run.executionMode,
       },
       artifactIds:
         directive.stepId !== undefined
           ? transition.run.steps.find((step) => step.id === directive.stepId)?.artifactIds ?? []
           : [],
-      controlRefs: directive.controlRefs ?? [],
+      controlRefs: directive.controlRefs ?? transition.run.controlRefs,
       metadata: {
         modeTransitionId: transition.modeTransition?.id ?? "unchanged",
+        permissionEvaluationId: transition.permissionEvaluation.id,
+        permissionOutcome: transition.permissionEvaluation.outcome,
+        permissionGated: transition.gated,
         stageId:
           directive.stepId !== undefined
             ? findStageByStepId(transition.run, directive.stepId)?.id ?? "unknown"

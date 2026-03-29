@@ -7,6 +7,7 @@ import type {
   StepStatus,
   ToolInvocation,
 } from "./action";
+import type { WorkerId } from "./workers";
 import type { Artifact } from "./audit";
 
 export type PolicyOutcome = "allow" | "escalate" | "block";
@@ -97,7 +98,7 @@ export type ScenarioStepTemplate = {
   title: string;
   description: string;
   sequence: number;
-  assignedWorkerId: string;
+  assignedWorkerId: WorkerId;
   executionMode: ExecutionMode;
   dependsOnStepIds: string[];
   artifactIds: string[];
@@ -109,7 +110,7 @@ type SimulationDirectiveBase = {
   atMinute: number;
   title: string;
   detail: string;
-  workerId?: string;
+  workerId?: WorkerId;
   controlRefs?: ControlReference[];
   metadata?: Record<string, string | number | boolean>;
 };
@@ -130,7 +131,7 @@ export type ScenarioStepStatusDirective = SimulationDirectiveBase & {
 export type ScenarioHandoffDirective = SimulationDirectiveBase & {
   kind: "handoff";
   stepId: string;
-  nextWorkerId: string;
+  nextWorkerId: WorkerId;
 };
 
 export type ScenarioArtifactDirective = SimulationDirectiveBase & {

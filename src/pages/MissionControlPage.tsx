@@ -1,3 +1,4 @@
+import { useMissionControlPageData } from "../app/data/hooks";
 import { PageShell } from "../components/shell/PageShell";
 import {
   ActiveRunsCard,
@@ -7,9 +8,9 @@ import {
   ScenarioSpotlightCard,
   WorkerActivityCard,
 } from "./overview/MissionControlSections";
-import { missionControlSeed } from "./overview/missionControlData";
 
 export function MissionControlPage() {
+  const missionControlData = useMissionControlPageData();
   const {
     activeRuns,
     activity,
@@ -19,7 +20,7 @@ export function MissionControlPage() {
     spotlight,
     summaryCards,
     workers,
-  } = missionControlSeed;
+  } = missionControlData;
 
   return (
     <PageShell

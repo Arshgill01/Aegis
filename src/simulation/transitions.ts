@@ -5,6 +5,7 @@ import type {
   StepStatus,
   TaskStep,
   ToolInvocation,
+  WorkerId,
   WorkflowRun,
 } from "../contracts";
 
@@ -34,7 +35,7 @@ export const allowedStepTransitions: Record<StepStatus, readonly StepStatus[]> =
 type RunTransitionInput = {
   toStatus: RunStatus;
   occurredAt: string;
-  currentWorkerId?: string;
+  currentWorkerId?: WorkerId;
   currentStepId?: string;
   controlRefs?: ControlReference[];
 };
@@ -43,7 +44,7 @@ type StepTransitionInput = {
   stepId: string;
   toStatus: StepStatus;
   occurredAt: string;
-  workerId?: string;
+  workerId?: WorkerId;
   outcomeSummary?: string;
   blockedReason?: string;
   controlRefs?: ControlReference[];
@@ -51,7 +52,7 @@ type StepTransitionInput = {
 
 type AssignWorkerInput = {
   stepId: string;
-  workerId: string;
+  workerId: WorkerId;
   occurredAt: string;
 };
 

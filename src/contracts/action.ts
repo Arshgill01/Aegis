@@ -1,3 +1,9 @@
+import type {
+  WorkerId,
+  WorkerRole,
+  WorkerStageOwnership,
+} from "./workers";
+
 export const executionModes = ["shadow", "execute"] as const;
 export type ExecutionMode = (typeof executionModes)[number];
 
@@ -29,17 +35,6 @@ export const stepStatuses = [
 ] as const;
 export type StepStatus = (typeof stepStatuses)[number];
 
-export const workerRoles = [
-  "intake",
-  "document_review",
-  "vendor_review",
-  "risk",
-  "approval",
-  "execution",
-  "audit",
-] as const;
-export type AgentWorkerRole = (typeof workerRoles)[number];
-
 export const controlRefKinds = ["policy", "approval", "replay"] as const;
 export type ControlRefKind = (typeof controlRefKinds)[number];
 
@@ -53,13 +48,14 @@ export type ControlReference = {
 };
 
 export type AgentWorker = {
-  id: string;
+  id: WorkerId;
   name: string;
-  role: AgentWorkerRole;
-  lane: string;
-  description: string;
+  role: WorkerRole;
+  roleLabel: string;
+  responsibility: string;
+  stageOwnership: WorkerStageOwnership;
+  handoffTargets: WorkerId[];
   defaultExecutionMode: ExecutionMode;
-  capabilities: string[];
 };
 
 export const toolInvocationStatuses = [
@@ -90,7 +86,7 @@ export type TaskStep = {
   sequence: number;
   status: StepStatus;
   executionMode: ExecutionMode;
-  assignedWorkerId: string;
+  assignedWorkerId: WorkerId;
   dependsOnStepIds: string[];
   artifactIds: string[];
   toolInvocations: ToolInvocation[];
@@ -112,7 +108,7 @@ export type WorkflowRun = {
   executionMode: ExecutionMode;
   riskLevel: RiskLevel;
   currentStepId?: string;
-  currentWorkerId?: string;
+  currentWorkerId?: WorkerId;
   artifactIds: string[];
   controlRefs: ControlReference[];
   eventIds: string[];

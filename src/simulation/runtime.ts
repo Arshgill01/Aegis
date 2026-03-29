@@ -12,6 +12,7 @@ import type {
   ScenarioStepStatusDirective,
   SimulationDirective,
   TaskStep,
+  WorkerId,
   WorkflowRun,
   WorkflowScenario,
 } from "../contracts";
@@ -47,7 +48,7 @@ function addMinutes(timestamp: string, minutes: number) {
   return new Date(Date.parse(timestamp) + minutes * 60_000).toISOString();
 }
 
-function findWorkerActor(scenario: WorkflowScenario, workerId?: string): AuditActor {
+function findWorkerActor(scenario: WorkflowScenario, workerId?: WorkerId): AuditActor {
   if (!workerId) {
     return {
       type: "system",
@@ -329,7 +330,7 @@ function applyHandoffDirective(state: SimulationState, directive: ScenarioHandof
   );
 }
 
-function resolveArtifactWorkerId(run: WorkflowRun, directive: ScenarioArtifactDirective) {
+function resolveArtifactWorkerId(run: WorkflowRun, directive: ScenarioArtifactDirective): WorkerId | undefined {
   if (!directive.stepId) {
     return run.currentWorkerId;
   }

@@ -1,10 +1,18 @@
+import type {
+  WorkerCapabilityPlaceholder,
+  WorkerOperationalSummary,
+} from "../contracts";
+
 export type WorkerId =
   | "worker-intake"
+  | "worker-document-review"
   | "worker-vendor-review"
   | "worker-po-match"
+  | "worker-policy-review"
   | "worker-risk"
   | "worker-approval-coordinator"
-  | "worker-execution";
+  | "worker-execution"
+  | "worker-audit-narrator";
 
 export type WorkerSupervisionModel =
   | "shadow-first"
@@ -58,6 +66,8 @@ export type AgentWorker = {
   supervisionModel: WorkerSupervisionModel;
   defaultQueue: string;
   specialties: string[];
+  capabilityPlaceholders?: WorkerCapabilityPlaceholder[];
+  operationalSummary?: WorkerOperationalSummary;
   handoffTargets: WorkerId[];
 };
 

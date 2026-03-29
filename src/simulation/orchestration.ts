@@ -4,6 +4,7 @@ import type {
   StepStatus,
   TaskStep,
   StageStatusTransition,
+  WorkerId,
   WorkerHandoff,
   WorkflowRunOrchestration,
   WorkflowStage,
@@ -107,7 +108,7 @@ export function transitionStageForStep(
   input: {
     stepId: string;
     toStatus: StepStatus;
-    workerId: string;
+    workerId: WorkerId;
     executionMode: ExecutionMode;
     occurredAt: string;
   },
@@ -168,7 +169,7 @@ export function handoffStageOwner(
   orchestration: WorkflowRunOrchestration,
   input: {
     stepId: string;
-    nextWorkerId: string;
+    nextWorkerId: WorkerId;
     executionMode: ExecutionMode;
     occurredAt: string;
   },
@@ -222,7 +223,7 @@ export function applyExecutionModeToOrchestration(
     toMode: ExecutionMode;
     occurredAt: string;
     stepId?: string;
-    workerId?: string;
+    workerId?: WorkerId;
   },
 ) {
   const stages = cloneStages(orchestration.stages);

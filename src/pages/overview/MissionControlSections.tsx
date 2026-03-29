@@ -30,7 +30,7 @@ export function ActiveRunsCard({ runs }: { runs: RunLane[] }) {
     <SurfaceCard
       eyebrow="Run supervision"
       title="Active workflow runs"
-      footer="Runs are ordered to keep current intervention pressure visible at a glance."
+      footer="Ordered by current intervention pressure."
     >
       <div className="mission-list mission-list--runs">
         {runs.map((run) => (
@@ -79,7 +79,7 @@ export function ApprovalsCard({ approvals }: { approvals: ApprovalPreview[] }) {
     <SurfaceCard
       eyebrow="Approvals"
       title="Pending approvals preview"
-      footer="Each approval card names the action, why it paused, and who resumes it next."
+      footer="Action, reason, owner, and resume path stay visible."
     >
       <div className="mission-list">
         {approvals.map((approval) => (
@@ -108,7 +108,7 @@ export function ActivityCard({ entries }: { entries: ActivityEvent[] }) {
     <SurfaceCard
       eyebrow="System activity"
       title="Recent system activity"
-      footer="System activity stays operational and explainable instead of collapsing into generic audit noise."
+      footer="Activity stays operational and explainable, not log-like."
     >
       <div className="mission-activity">
         {entries.map((entry) => (
@@ -143,7 +143,7 @@ export function RiskPostureCard({
     <SurfaceCard
       eyebrow="Risk posture"
       title="Flagged items and control posture"
-      footer="Risk stays concrete: visible affected run, surfaced reason, and the next human or worker step."
+      footer="Affected run, surfaced reason, and next step stay explicit."
     >
       <div className="mission-posture">
         {postureSignals.map((signal) => (
@@ -179,7 +179,7 @@ export function WorkerActivityCard({ workers }: { workers: WorkerLane[] }) {
     <SurfaceCard
       eyebrow="Worker lanes"
       title="Worker activity"
-      footer="Workers stay distinct by role, queue pressure, and current focus instead of reading as identical labels."
+      footer="Role, load, and focus stay distinct across worker lanes."
     >
       <div className="mission-workers">
         {workers.map((worker) => (
@@ -208,7 +208,7 @@ export function ScenarioSpotlightCard({ spotlight }: { spotlight: ScenarioSpotli
     <SurfaceCard
       eyebrow="Scenario spotlight"
       title="Deterministic demo anchor"
-      footer="The Overview stays demo-ready without claiming deeper orchestration or approval mechanics than Wave 1 owns."
+      footer="Demo-safe without implying deeper runtime mechanics than Wave 1 owns."
     >
       <div className="mission-spotlight">
         <div className="mission-spotlight__header">

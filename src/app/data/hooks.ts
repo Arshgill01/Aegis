@@ -1,5 +1,5 @@
 import {
-  buildAgentsPageContent,
+  buildAgentsPageData,
   buildApprovalsPageContent,
   buildFinOpsWorkflowPageContent,
   buildMissionControlPageData,
@@ -11,8 +11,8 @@ export function useMissionControlPageData() {
   return buildMissionControlPageData();
 }
 
-export function useAgentsPageContent() {
-  return buildAgentsPageContent();
+export function useAgentsPageData() {
+  return buildAgentsPageData();
 }
 
 export function useRunsPageContent() {

@@ -15,6 +15,8 @@ export type RunsPageData = {
   runQueue: RunQueueItem[];
   spotlight: SpotlightRun;
   stepGroups: StepGroup[];
+  timeline: TimelineItem[];
+  executionMode: ExecutionModePanel;
   footerNote: string;
 };
 
@@ -26,6 +28,7 @@ export type RunQueueItem = {
   nextAction: string;
   statusLabel: string;
   riskLabel: string;
+  modeLabel: "Shadow" | "Execute-ready";
   ownerName: string;
   ownerRole: string;
   etaLabel: string;
@@ -39,6 +42,7 @@ export type SpotlightRun = {
   accountName: string;
   statusLabel: string;
   riskLabel: string;
+  modeLabel: "Shadow" | "Execute-ready";
   currentStage: string;
   nextAction: string;
   ownerName: string;
@@ -51,6 +55,8 @@ export type SpotlightRun = {
     toWorkerName: string;
     stepTitle: string;
   }[];
+  shadowStepCount: number;
+  executeReadyStepCount: number;
   watchpoints: string[];
 };
 
@@ -66,7 +72,29 @@ export type StepItem = {
   title: string;
   summary: string;
   statusLabel: string;
+  modeLabel: "Shadow" | "Execute-ready";
   workerName: string;
   workerRole: string;
   handoffFrom?: string;
+};
+
+export type TimelineItem = {
+  id: string;
+  lane: "event" | "handoff";
+  timeLabel: string;
+  title: string;
+  detail: string;
+  actorName: string;
+  category: string;
+  modeLabel: "Shadow" | "Execute-ready";
+  tone: "neutral" | "attention" | "positive";
+};
+
+export type ExecutionModePanel = {
+  runModeLabel: "Shadow" | "Execute-ready";
+  shadowRunCount: number;
+  executeReadyRunCount: number;
+  shadowStepCount: number;
+  executeReadyStepCount: number;
+  nextExecuteWorker: string;
 };

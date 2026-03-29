@@ -360,6 +360,7 @@ export function buildRunsPageData(): RunsPageData {
       title: step.title,
       summary: step.summary,
       statusLabel: formatStepStatus(step.status),
+      modeLabel: formatMode(step.mode),
       workerName: worker?.name ?? "Unknown worker",
       workerRole: worker?.role ?? "Unassigned role",
       handoffFrom,
@@ -380,6 +381,49 @@ export function buildRunsPageData(): RunsPageData {
   const completedSpotlightSteps = overview.spotlight.steps.filter(
     (step) => step.status === "completed",
   ).length;
+  const shadowSpotlightStepCount = overview.spotlight.steps.filter(
+    (step) => step.mode === "shadow",
+  ).length;
+  const executeReadySpotlightStepCount = overview.spotlight.steps.filter(
+    (step) => step.mode === "execute_ready",
+  ).length;
+  const shadowRunCount = overview.activeScenarios.filter((scenario) => scenario.run.mode === "shadow")
+    .length;
+  const workerModeMap = new Map(
+    overview.spotlight.steps.map((step) => [workerName(step.workerId), formatMode(step.mode)]),
+  );
+  const eventTimeline = overview.spotlight.events
+    .slice()
+    .sort((left, right) => left.timestamp.localeCompare(right.timestamp))
+    .map((event) => ({
+      id: event.id,
+      lane: "event" as const,
+      timeLabel: formatEventTime(event.timestamp),
+      title: event.title,
+      detail: event.detail,
+      actorName: event.actorName,
+      category: event.category,
+      modeLabel: workerModeMap.get(event.actorName) ?? formatMode(overview.spotlight.run.mode),
+      tone: toneFromRisk(event.riskLevel),
+    }));
+  const handoffTimeline = spotlightSteps
+    .filter((step) => Boolean(step.handoffFrom))
+    .map((step) => ({
+      id: `handoff-${step.id}`,
+      lane: "handoff" as const,
+      timeLabel: "Handoff",
+      title: `${step.handoffFrom ?? "Previous worker"} handed off to ${step.workerName}`,
+      detail: step.title,
+      actorName: step.workerName,
+      category: "Ownership shift",
+      modeLabel: step.modeLabel,
+      tone: "neutral" as const,
+    }));
+  const nextExecuteStep = spotlightSteps.find(
+    (step, index) =>
+      overview.spotlight.steps[index].mode === "execute_ready" &&
+      overview.spotlight.steps[index].status !== "completed",
+  );
 
   return {
     eyebrow: "Execution Surface",
@@ -393,7 +437,10 @@ export function buildRunsPageData(): RunsPageData {
         value: `${overview.waitingRunCount} waiting on review`,
         tone: "attention",
       },
-      { label: "Execute-ready", value: `${overview.executeReadyCount} prepared` },
+      {
+        label: "Mode split",
+        value: `${shadowRunCount} shadow / ${overview.executeReadyCount} execute-ready`,
+      },
       {
         label: "Completed receipts",
         value: `${overview.completedRunCount} retained`,
@@ -410,6 +457,10 @@ export function buildRunsPageData(): RunsPageData {
         label: "Active stage",
         detail: activeStep.title,
       },
+      {
+        label: "Spotlight mode",
+        detail: formatMode(overview.spotlight.run.mode),
+      },
     ],
     runQueue: overview.activeScenarios.map((scenario) => {
       const completedSteps = scenario.steps.filter((step) => step.status === "completed").length;
@@ -423,6 +474,7 @@ export function buildRunsPageData(): RunsPageData {
         nextAction: scenario.run.nextAction,
         statusLabel: formatRunStatus(scenario.run.status),
         riskLabel: `${formatRiskLabel(scenario.run.riskLevel)} risk`,
+        modeLabel: formatMode(scenario.run.mode),
         ownerName: owner?.name ?? "Unknown worker",
         ownerRole: owner?.role ?? "Unassigned role",
         etaLabel: etaLabel(scenario.run.etaMinutes),
@@ -436,6 +488,7 @@ export function buildRunsPageData(): RunsPageData {
       accountName: overview.spotlight.run.accountName,
       statusLabel: formatRunStatus(overview.spotlight.run.status),
       riskLabel: `${formatRiskLabel(overview.spotlight.run.riskLevel)} risk`,
+      modeLabel: formatMode(overview.spotlight.run.mode),
       currentStage: overview.spotlight.run.currentStage,
       nextAction: overview.spotlight.run.nextAction,
       ownerName: spotlightOwner?.name ?? "Unknown worker",
@@ -450,9 +503,20 @@ export function buildRunsPageData(): RunsPageData {
           toWorkerName: step.workerName,
           stepTitle: step.title,
         })),
+      shadowStepCount: shadowSpotlightStepCount,
+      executeReadyStepCount: executeReadySpotlightStepCount,
       watchpoints: overview.spotlight.watchpoints,
     },
     stepGroups: groupedSteps,
+    timeline: [...eventTimeline, ...handoffTimeline],
+    executionMode: {
+      runModeLabel: formatMode(overview.spotlight.run.mode),
+      shadowRunCount,
+      executeReadyRunCount: overview.executeReadyCount,
+      shadowStepCount: shadowSpotlightStepCount,
+      executeReadyStepCount: executeReadySpotlightStepCount,
+      nextExecuteWorker: nextExecuteStep?.workerName ?? spotlightOwner?.name ?? "No pending worker",
+    },
     footerNote:
       "Run progression stays deterministic and inspectable so later policy, approval, and replay waves can layer in without replacing the orchestration story.",
   };

@@ -4,7 +4,7 @@ import {
   buildFinOpsWorkflowPageContent,
   buildMissionControlPageData,
   buildPoliciesPageContent,
-  buildRunsPageContent,
+  buildRunsPageData,
   buildShellOrchestrationSummary,
 } from "./pageAdapters";
 
@@ -20,8 +20,8 @@ export function useAgentsPageData() {
   return buildAgentsPageData();
 }
 
-export function useRunsPageContent() {
-  return buildRunsPageContent();
+export function useRunsPageData() {
+  return buildRunsPageData();
 }
 
 export function useApprovalsPageContent() {

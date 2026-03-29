@@ -24,6 +24,7 @@ import {
   transitionRunStatus,
   transitionStepStatus,
 } from "./transitions";
+import { createRunOrchestration } from "./orchestration";
 
 type SimulationState = {
   scenario: WorkflowScenario;
@@ -101,6 +102,7 @@ function createRunSteps(scenario: WorkflowScenario): TaskStep[] {
 
 export function createWorkflowRunFromScenario(scenario: WorkflowScenario): WorkflowRun {
   const steps = createRunSteps(scenario);
+  const orchestration = createRunOrchestration(steps, scenario.seedTime);
 
   return {
     id: scenario.runId,
@@ -113,13 +115,23 @@ export function createWorkflowRunFromScenario(scenario: WorkflowScenario): Workf
     riskLevel: scenario.riskAssessment.severity,
     currentStepId: steps[0]?.id,
     currentWorkerId: steps[0]?.assignedWorkerId,
+    currentStageId: orchestration.currentStageId,
     artifactIds: steps[0] ? [...steps[0].artifactIds] : [],
     controlRefs: [],
     eventIds: [],
     steps,
+    orchestration,
     createdAt: scenario.seedTime,
     updatedAt: scenario.seedTime,
   };
+}
+
+function findStageByStepId(run: WorkflowRun, stepId?: string) {
+  if (!stepId) {
+    return undefined;
+  }
+
+  return run.orchestration.stages.find((stage) => stage.stepId === stepId);
 }
 
 function appendEvent(
@@ -170,6 +182,8 @@ function initializeSimulationState(scenario: WorkflowScenario): SimulationState 
       metadata: {
         scenarioId: scenario.id,
         workflowKey: scenario.workflowKey,
+        currentStageId: initialRun.currentStageId ?? "none",
+        currentWorkerId: initialRun.currentWorkerId ?? "none",
       },
     },
   );
@@ -255,7 +269,12 @@ function applyRunStatusDirective(state: SimulationState, directive: ScenarioRunS
       runStatus: directive.toStatus,
       artifactIds: [],
       controlRefs: directive.controlRefs ?? [],
-      metadata: directive.metadata,
+      metadata: {
+        currentStepId: transition.run.currentStepId ?? "none",
+        currentStageId: transition.run.currentStageId ?? "none",
+        currentWorkerId: transition.run.currentWorkerId ?? "none",
+        ...directive.metadata,
+      },
     },
   );
 }
@@ -293,7 +312,14 @@ function applyStepStatusDirective(state: SimulationState, directive: ScenarioSte
       stepStatus: directive.toStatus,
       artifactIds: [...transition.step.artifactIds],
       controlRefs: directive.controlRefs ?? transition.step.controlRefs,
-      metadata: directive.metadata,
+      metadata: {
+        stageId: transition.stage.id,
+        stageStatus: transition.stage.status,
+        stageTransitionId: transition.stageTransition?.id ?? "unchanged",
+        currentStageId: transition.run.currentStageId ?? "none",
+        currentWorkerId: transition.run.currentWorkerId ?? "none",
+        ...directive.metadata,
+      },
     },
   );
 }
@@ -316,14 +342,21 @@ function applyHandoffDirective(state: SimulationState, directive: ScenarioHandof
       stepId: directive.stepId,
       title: directive.title,
       detail: directive.detail,
-      actor: findWorkerActor(state.scenario, directive.nextWorkerId),
+      actor: findWorkerActor(
+        state.scenario,
+        directive.workerId ?? transition.previousWorkerId ?? directive.nextWorkerId,
+      ),
       executionMode: transition.step.executionMode,
       occurredAt,
       artifactIds: [...transition.step.artifactIds],
       controlRefs: directive.controlRefs ?? [],
       metadata: {
-        previousWorkerId: transition.previousWorkerId,
+        handoffId: transition.handoff.id,
+        handoffSequence: transition.handoff.sequence,
+        stageId: transition.handoff.stageId,
+        previousWorkerId: transition.previousWorkerId ?? "none",
         nextWorkerId: directive.nextWorkerId,
+        currentStageId: transition.run.currentStageId ?? "none",
         ...directive.metadata,
       },
     },
@@ -364,7 +397,14 @@ function applyArtifactDirective(state: SimulationState, directive: ScenarioArtif
       occurredAt,
       artifactIds: directive.artifactIds,
       controlRefs: directive.controlRefs ?? [],
-      metadata: directive.metadata,
+      metadata: {
+        stageId:
+          directive.stepId !== undefined
+            ? findStageByStepId(transition.run, directive.stepId)?.id ?? "unknown"
+            : transition.run.currentStageId ?? "none",
+        currentWorkerId: transition.run.currentWorkerId ?? "none",
+        ...directive.metadata,
+      },
     },
   );
 }
@@ -400,7 +440,15 @@ function applyModeDirective(state: SimulationState, directive: ScenarioModeDirec
           ? transition.run.steps.find((step) => step.id === directive.stepId)?.artifactIds ?? []
           : [],
       controlRefs: directive.controlRefs ?? [],
-      metadata: directive.metadata,
+      metadata: {
+        modeTransitionId: transition.modeTransition?.id ?? "unchanged",
+        stageId:
+          directive.stepId !== undefined
+            ? findStageByStepId(transition.run, directive.stepId)?.id ?? "unknown"
+            : transition.run.currentStageId ?? "none",
+        currentWorkerId: transition.run.currentWorkerId ?? "none",
+        ...directive.metadata,
+      },
     },
   );
 }

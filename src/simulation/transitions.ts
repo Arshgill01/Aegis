@@ -7,6 +7,12 @@ import type {
   ToolInvocation,
   WorkflowRun,
 } from "../contracts";
+import {
+  applyExecutionModeToOrchestration,
+  handoffStageOwner,
+  resolveCurrentStageId,
+  transitionStageForStep,
+} from "./orchestration";
 
 export const allowedRunTransitions: Record<RunStatus, readonly RunStatus[]> = {
   queued: ["planning", "cancelled"],
@@ -194,12 +200,32 @@ export function transitionRunStatus(
 ) {
   assertRunTransitionAllowed(run.status, toStatus);
 
+  const nextCurrentStepId = currentStepId ?? run.currentStepId;
+  const nextCurrentStageId = resolveCurrentStageId(run.orchestration, nextCurrentStepId);
+  const nextCurrentWorkerId = currentWorkerId ?? run.currentWorkerId;
+  const nextOrchestration = nextCurrentStageId
+    ? {
+        ...run.orchestration,
+        stages: run.orchestration.stages.map((stage) =>
+          stage.id === nextCurrentStageId && nextCurrentWorkerId
+            ? {
+                ...stage,
+                ownerWorkerId: nextCurrentWorkerId,
+                updatedAt: occurredAt,
+              }
+            : stage,
+        ),
+        currentStageId: nextCurrentStageId,
+      }
+    : run.orchestration;
+
   return {
     run: {
       ...run,
       status: toStatus,
-      currentWorkerId: currentWorkerId ?? run.currentWorkerId,
-      currentStepId: currentStepId ?? run.currentStepId,
+      currentWorkerId: nextCurrentWorkerId,
+      currentStepId: nextCurrentStepId,
+      currentStageId: nextCurrentStageId,
       startedAt: run.startedAt ?? (toStatus === "in_progress" ? occurredAt : undefined),
       updatedAt: occurredAt,
       completedAt:
@@ -207,6 +233,7 @@ export function transitionRunStatus(
           ? occurredAt
           : run.completedAt,
       controlRefs: mergeControlRefs(run.controlRefs, controlRefs),
+      orchestration: nextOrchestration,
     },
     previousStatus: run.status,
   };
@@ -216,6 +243,12 @@ export function transitionStepStatus(
   run: WorkflowRun,
   { stepId, toStatus, occurredAt, workerId, outcomeSummary, blockedReason, controlRefs }: StepTransitionInput,
 ) {
+  const previousStep = run.steps.find((step) => step.id === stepId);
+
+  if (!previousStep) {
+    throw new Error(`Unknown step: ${stepId}`);
+  }
+
   const { run: updatedRun, step } = updateStep(run, stepId, (currentStep) => {
     assertStepTransitionAllowed(currentStep.status, toStatus);
 
@@ -237,17 +270,30 @@ export function transitionStepStatus(
     };
   });
 
+  const nextWorkerId = workerId ?? step.assignedWorkerId;
+  const stageTransition = transitionStageForStep(updatedRun.orchestration, {
+    stepId,
+    toStatus,
+    workerId: nextWorkerId,
+    executionMode: step.executionMode,
+    occurredAt,
+  });
+
   return {
     run: {
       ...updatedRun,
       currentStepId: stepId,
-      currentWorkerId: workerId ?? step.assignedWorkerId,
+      currentWorkerId: nextWorkerId,
+      currentStageId: stageTransition.orchestration.currentStageId,
       startedAt: updatedRun.startedAt ?? (toStatus === "in_progress" ? occurredAt : updatedRun.startedAt),
       updatedAt: occurredAt,
       controlRefs: mergeControlRefs(updatedRun.controlRefs, controlRefs),
+      orchestration: stageTransition.orchestration,
     },
     step,
-    previousStatus: run.steps.find((currentStep) => currentStep.id === stepId)?.status ?? step.status,
+    stage: stageTransition.stage,
+    stageTransition: stageTransition.transition,
+    previousStatus: previousStep.status,
   };
 }
 
@@ -264,15 +310,26 @@ export function assignWorkerToStep(run: WorkflowRun, { stepId, workerId, occurre
     updatedAt: occurredAt,
   }));
 
+  const handoffTransition = handoffStageOwner(updatedRun.orchestration, {
+    stepId,
+    nextWorkerId: workerId,
+    executionMode: step.executionMode,
+    occurredAt,
+  });
+
   return {
     run: {
       ...updatedRun,
       currentStepId: stepId,
       currentWorkerId: workerId,
+      currentStageId: handoffTransition.orchestration.currentStageId,
       updatedAt: occurredAt,
+      orchestration: handoffTransition.orchestration,
     },
     step,
-    previousWorkerId: previousStep.assignedWorkerId,
+    stage: handoffTransition.stage,
+    handoff: handoffTransition.handoff,
+    previousWorkerId: handoffTransition.previousWorkerId ?? previousStep.assignedWorkerId,
   };
 }
 
@@ -299,6 +356,7 @@ export function attachArtifacts(run: WorkflowRun, { artifactIds, occurredAt, ste
       ...updatedRun,
       artifactIds: uniq([...updatedRun.artifactIds, ...artifactIds]),
       currentStepId: stepId,
+      currentStageId: resolveCurrentStageId(updatedRun.orchestration, stepId),
       updatedAt: occurredAt,
     },
     attachedArtifactIds: artifactIds,
@@ -309,14 +367,26 @@ export function setExecutionMode(
   run: WorkflowRun,
   { executionMode, occurredAt, stepId }: ModeChangeInput,
 ) {
+  const previousExecutionMode = run.executionMode;
+
   if (!stepId) {
+    const modeUpdate = applyExecutionModeToOrchestration(run.orchestration, {
+      fromMode: previousExecutionMode,
+      toMode: executionMode,
+      occurredAt,
+      workerId: run.currentWorkerId,
+    });
+
     return {
       run: {
         ...run,
         executionMode,
+        currentStageId: modeUpdate.orchestration.currentStageId,
         updatedAt: occurredAt,
+        orchestration: modeUpdate.orchestration,
       },
-      previousExecutionMode: run.executionMode,
+      previousExecutionMode,
+      modeTransition: modeUpdate.modeTransition,
     };
   }
 
@@ -330,15 +400,26 @@ export function setExecutionMode(
     })),
   }));
 
+  const modeUpdate = applyExecutionModeToOrchestration(updatedRun.orchestration, {
+    fromMode: previousExecutionMode,
+    toMode: executionMode,
+    occurredAt,
+    stepId,
+    workerId: step.assignedWorkerId,
+  });
+
   return {
     run: {
       ...updatedRun,
       executionMode,
       currentStepId: stepId,
       currentWorkerId: step.assignedWorkerId,
+      currentStageId: modeUpdate.orchestration.currentStageId,
       updatedAt: occurredAt,
+      orchestration: modeUpdate.orchestration,
     },
     step,
-    previousExecutionMode: run.executionMode,
+    previousExecutionMode,
+    modeTransition: modeUpdate.modeTransition,
   };
 }

@@ -4,6 +4,7 @@ import type {
   RunStatus,
   StepStatus,
 } from "./action";
+import type { WorkerId } from "./workers";
 
 export const artifactKinds = [
   "invoice",
@@ -48,7 +49,7 @@ export type AuditActor =
     }
   | {
       type: "worker";
-      workerId: string;
+      workerId: WorkerId;
       label: string;
     };
 
@@ -105,6 +106,6 @@ export type ExecutionReceipt = {
   waitingStepCount: number;
   blockedStepCount: number;
   failedStepCount: number;
-  finalWorkerId?: string;
+  finalWorkerId?: WorkerId;
   finalStepId?: string;
 };

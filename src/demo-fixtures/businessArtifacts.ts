@@ -19,7 +19,19 @@ export const workerFixtures = [
     supervisionModel: "shadow-first",
     defaultQueue: "Inbound invoice packets",
     specialties: ["packet assembly", "artifact triage", "submission provenance"],
-    handoffTargets: ["worker-vendor-review", "worker-po-match"],
+    handoffTargets: ["worker-document-review", "worker-vendor-review", "worker-po-match"],
+  },
+  {
+    id: "worker-document-review",
+    name: "Document Review Worker",
+    role: "Document validation and evidence quality control",
+    team: "FinOps Control",
+    summary:
+      "Validates extracted invoice fields, confirms document completeness, and keeps artifact lineage stable before deeper control checks.",
+    supervisionModel: "shadow-first",
+    defaultQueue: "Structured document review",
+    specialties: ["field validation", "artifact traceability", "evidence quality checks"],
+    handoffTargets: ["worker-po-match", "worker-policy-review", "worker-risk"],
   },
   {
     id: "worker-vendor-review",
@@ -43,7 +55,19 @@ export const workerFixtures = [
     supervisionModel: "shadow-first",
     defaultQueue: "PO-backed invoices",
     specialties: ["three-way match", "line-item variance", "receiving evidence"],
-    handoffTargets: ["worker-risk", "worker-execution"],
+    handoffTargets: ["worker-policy-review", "worker-risk", "worker-execution"],
+  },
+  {
+    id: "worker-policy-review",
+    name: "Policy Review Worker",
+    role: "Control policy interpretation and path recommendation",
+    team: "Control Plane",
+    summary:
+      "Interprets control policy posture for each run and marks whether the next lane should allow, escalate, or block.",
+    supervisionModel: "approval-gated",
+    defaultQueue: "Policy checkpoint lane",
+    specialties: ["policy routing", "scope interpretation", "control-path recommendations"],
+    handoffTargets: ["worker-risk", "worker-approval-coordinator"],
   },
   {
     id: "worker-risk",
@@ -79,7 +103,19 @@ export const workerFixtures = [
     supervisionModel: "controlled-execution",
     defaultQueue: "Ready-for-release actions",
     specialties: ["erp posting", "payment release", "execution receipts"],
-    handoffTargets: ["worker-risk"],
+    handoffTargets: ["worker-risk", "worker-audit-narrator"],
+  },
+  {
+    id: "worker-audit-narrator",
+    name: "Audit Narrator",
+    role: "Replay framing and execution narrative curation",
+    team: "Control Plane",
+    summary:
+      "Builds the operator-facing narrative from worker actions so replay and receipts remain legible after completion.",
+    supervisionModel: "shadow-first",
+    defaultQueue: "Replay and receipt composition",
+    specialties: ["event narration", "receipt synthesis", "timeline framing"],
+    handoffTargets: ["worker-risk", "worker-approval-coordinator"],
   },
 ] satisfies AgentWorker[];
 

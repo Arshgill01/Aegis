@@ -631,7 +631,8 @@ select {
 
 .mission-list,
 .mission-activity,
-.mission-workers {
+.mission-workers,
+.mission-policy {
   display: flex;
   flex-direction: column;
   gap: 0.72rem;
@@ -646,6 +647,7 @@ select {
 .mission-approval,
 .mission-flag,
 .mission-worker,
+.mission-policy__item,
 .mission-posture__item,
 .mission-spotlight {
   border: 1px solid var(--border-soft);
@@ -659,6 +661,7 @@ select {
 .mission-approval,
 .mission-flag,
 .mission-worker,
+.mission-policy__item,
 .mission-spotlight {
   padding: 0.85rem;
 }
@@ -674,7 +677,8 @@ select {
 .mission-approval__header strong,
 .mission-activity__meta strong,
 .mission-flag__header strong,
-.mission-worker__header strong {
+.mission-worker__header strong,
+.mission-policy__header strong {
   font-size: 0.95rem;
   letter-spacing: -0.02em;
 }
@@ -688,6 +692,8 @@ select {
 .mission-worker__meta span,
 .mission-posture__item span,
 .mission-flag__footer span,
+.mission-policy__header p,
+.mission-policy__footer span,
 .mission-spotlight__header span,
 .mission-run__grid span {
   color: var(--text-secondary);
@@ -701,6 +707,7 @@ select {
 .mission-flag p,
 .mission-worker__header p,
 .mission-worker__focus,
+.mission-policy__item p,
 .mission-spotlight p {
   margin: 0.35rem 0 0;
   color: var(--text-secondary);
@@ -732,7 +739,8 @@ select {
 
 .mission-approval__footer,
 .mission-flag__footer,
-.mission-worker__meta {
+.mission-worker__meta,
+.mission-policy__footer {
   margin-top: 0.72rem;
 }
 
@@ -801,6 +809,24 @@ select {
   gap: 1rem;
 }
 
+.mission-policy__header,
+.mission-policy__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.mission-policy__footer {
+  padding-top: 0.62rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.mission-policy__footer strong {
+  font-size: 0.9rem;
+  line-height: 1.42;
+}
+
 .mission-worker__meta {
   padding-top: 0.62rem;
   border-top: 1px solid var(--border-soft);
@@ -836,6 +862,7 @@ select {
 .run-orch__step,
 .run-orch__spotlight,
 .run-orch__handoff,
+.run-orch__policy-item,
 .run-orch__spotlight-stage,
 .run-orch__spotlight-owner,
 .run-orch__spotlight-summary {
@@ -851,6 +878,7 @@ select {
 .run-orch__step,
 .run-orch__spotlight,
 .run-orch__handoff,
+.run-orch__policy-item,
 .run-orch__spotlight-stage,
 .run-orch__spotlight-owner,
 .run-orch__spotlight-summary {
@@ -859,7 +887,9 @@ select {
 
 .run-orch__queue-header,
 .run-orch__step-header,
-.run-orch__spotlight-header {
+.run-orch__spotlight-header,
+.run-orch__policy-item-header,
+.run-orch__policy-item-footer {
   display: flex;
   justify-content: space-between;
   gap: 0.72rem;
@@ -901,8 +931,11 @@ select {
 .run-orch__spotlight-summary p,
 .run-orch__spotlight-section > span,
 .run-orch__handoff span,
+.run-orch__policy-item-header p,
+.run-orch__policy-item-footer span,
 .run-orch__empty,
 .run-orch__next-action span,
+.run-orch__policy-note span,
 .run-orch__next-action p {
   color: var(--text-secondary);
   font-size: 0.78rem;
@@ -916,7 +949,8 @@ select {
 .run-orch__spotlight-stage p,
 .run-orch__spotlight-owner p,
 .run-orch__spotlight-summary p,
-.run-orch__next-action {
+.run-orch__next-action,
+.run-orch__policy-note {
   margin-top: 0.38rem;
 }
 
@@ -950,6 +984,20 @@ select {
   margin-top: 0.18rem;
   font-size: 0.88rem;
   line-height: 1.45;
+}
+
+.run-orch__policy-note {
+  margin: 0;
+  padding-top: 0.68rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.run-orch__policy-note strong {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
 }
 
 .run-orch__spotlight {
@@ -1095,6 +1143,78 @@ select {
 .run-orch__mode {
   display: grid;
   gap: 0.74rem;
+}
+
+.run-orch__policy-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.68rem;
+}
+
+.run-orch__policy-summary article {
+  padding: 0.72rem 0.78rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(10, 13, 18, 0.76);
+}
+
+.run-orch__policy-summary span {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.run-orch__policy-summary strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1.14rem;
+  letter-spacing: -0.04em;
+}
+
+.run-orch__policy-highlight {
+  padding: 0.82rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(10, 13, 18, 0.76);
+}
+
+.run-orch__policy-highlight p {
+  margin: 0.62rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.run-orch__policy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.72rem;
+}
+
+.run-orch__policy-item {
+  display: grid;
+  gap: 0.58rem;
+}
+
+.run-orch__policy-item p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.run-orch__policy-item-footer {
+  padding-top: 0.62rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.run-orch__policy-item-footer strong {
+  font-size: 0.88rem;
+  line-height: 1.44;
 }
 
 .run-orch__mode-grid {
@@ -1273,6 +1393,80 @@ select {
   margin-top: 0.66rem;
 }
 
+.policy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.72rem;
+}
+
+.policy-item,
+.policy-explain {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(10, 13, 18, 0.76);
+}
+
+.policy-item {
+  padding: 0.85rem;
+}
+
+.policy-item__header,
+.policy-item__footer,
+.policy-explain__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.policy-item__header strong,
+.policy-explain__header strong,
+.policy-item__footer strong,
+.policy-explain__section strong {
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.policy-item__header p,
+.policy-item p,
+.policy-item__footer span,
+.policy-explain p,
+.policy-explain__section span,
+.policy-explain__section li {
+  margin: 0.36rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.policy-item__footer {
+  margin-top: 0.72rem;
+  padding-top: 0.62rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.policy-explain {
+  display: grid;
+  gap: 0.74rem;
+  padding: 0.85rem;
+}
+
+.policy-explain__section {
+  padding-top: 0.62rem;
+  border-top: 1px solid var(--border-soft);
+  display: grid;
+  gap: 0.32rem;
+}
+
+.policy-explain__section ul {
+  margin: 0.2rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.38rem;
+}
+
 @media (max-width: 1200px) {
   .app-shell {
     grid-template-columns: 280px minmax(0, 1fr);
@@ -1291,6 +1485,10 @@ select {
   .mission-posture,
   .mission-workers,
   .agents-lanes {
+    grid-template-columns: 1fr;
+  }
+
+  .run-orch__policy-summary {
     grid-template-columns: 1fr;
   }
 }
@@ -1353,6 +1551,8 @@ select {
   .mission-flag__footer,
   .mission-worker__header,
   .mission-worker__meta,
+  .mission-policy__header,
+  .mission-policy__footer,
   .mission-spotlight__header {
     flex-direction: column;
   }
@@ -1368,7 +1568,10 @@ select {
   .agents-handoff__header,
   .agents-handoff__footer,
   .agents-activity__meta,
-  .agents-activity__footer {
+  .agents-activity__footer,
+  .policy-item__header,
+  .policy-item__footer,
+  .policy-explain__header {
     flex-direction: column;
   }
 
@@ -1379,7 +1582,9 @@ select {
 
   .run-orch__queue-header,
   .run-orch__step-header,
-  .run-orch__spotlight-header {
+  .run-orch__spotlight-header,
+  .run-orch__policy-item-header,
+  .run-orch__policy-item-footer {
     flex-direction: column;
   }
 

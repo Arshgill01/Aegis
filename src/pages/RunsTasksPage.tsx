@@ -4,6 +4,7 @@ import {
   CurrentStageCard,
   ExecutionModeCard,
   OrchestrationTimelineCard,
+  PolicyPostureCard,
   RunQueueCard,
   StepProgressionCard,
 } from "./runs/RunOrchestrationSections";
@@ -28,6 +29,7 @@ export function RunsTasksPage() {
       secondaryColumn={
         <>
           <CurrentStageCard run={runsPage.spotlight} />
+          <PolicyPostureCard posture={runsPage.policyPosture} />
           <ExecutionModeCard executionMode={runsPage.executionMode} />
         </>
       }

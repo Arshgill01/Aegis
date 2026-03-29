@@ -44,8 +44,20 @@ export type FlaggedItem = {
   title: string;
   runId: string;
   severity: string;
+  decision: string;
   summary: string;
+  evidence: string;
   nextAction: string;
+  tone: MissionTone;
+};
+
+export type PolicyDecisionItem = {
+  runId: string;
+  workflow: string;
+  posture: string;
+  risk: string;
+  reason: string;
+  nextControl: string;
   tone: MissionTone;
 };
 
@@ -73,6 +85,7 @@ export type MissionControlPageData = {
   approvals: ApprovalPreview[];
   activity: ActivityEvent[];
   flaggedItems: FlaggedItem[];
+  decisionPosture: PolicyDecisionItem[];
   workers: WorkerLane[];
   spotlight: ScenarioSpotlight;
 };

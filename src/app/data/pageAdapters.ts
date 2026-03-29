@@ -20,6 +20,7 @@ import {
 } from "../../domain/selectors";
 import type { PageContentConfig } from "../../pages/pageContent";
 import type { RunsPageData, StepGroup, StepItem } from "../../pages/runs/runPageData";
+import type { PoliciesPageData } from "../../pages/policies/policiesData";
 import type {
   AgentsPageData,
   AgentSurfaceTone,
@@ -100,8 +101,40 @@ function formatRunStatus(status: WorkflowScenario["run"]["status"]) {
   }
 }
 
-function formatOutcome(outcome: PolicyOutcome) {
-  return `${outcome.slice(0, 1).toUpperCase()}${outcome.slice(1)}`;
+const policyOutcomePriority: Record<PolicyOutcome, number> = {
+  block: 0,
+  escalate: 1,
+  allow: 2,
+};
+
+function formatPolicyPosture(outcome: PolicyOutcome) {
+  if (outcome === "block") {
+    return "Blocked";
+  }
+
+  if (outcome === "escalate") {
+    return "Requires approval";
+  }
+
+  return "Allowed";
+}
+
+function toneFromPolicyOutcome(outcome: PolicyOutcome): MissionTone {
+  if (outcome === "allow") {
+    return "positive";
+  }
+
+  return "attention";
+}
+
+function toneFromPolicyOutcomeForRun(
+  outcome: PolicyOutcome,
+): "neutral" | "attention" | "positive" {
+  if (outcome === "allow") {
+    return "positive";
+  }
+
+  return "attention";
 }
 
 function formatEventTime(timestamp: string) {
@@ -127,6 +160,12 @@ function byRiskAndEta(left: WorkflowScenario, right: WorkflowScenario) {
     riskPriority[left.run.riskLevel] - riskPriority[right.run.riskLevel] ||
     left.run.etaMinutes - right.run.etaMinutes
   );
+}
+
+function mostRestrictivePolicy(scenario: WorkflowScenario) {
+  return scenario.policies
+    .slice()
+    .sort((left, right) => policyOutcomePriority[left.outcome] - policyOutcomePriority[right.outcome])[0];
 }
 
 function toneFromRunRisk(riskLevel: RiskLevel, mode: ExecutionMode): AgentSurfaceTone {
@@ -205,6 +244,12 @@ const stepGroupLabels: Record<StepGroupKey, { label: string; detail: string }> =
 
 export function buildMissionControlPageData(): MissionControlPageData {
   const snapshot = selectMissionControlSnapshot();
+  const activePolicyDecisions = snapshot.activeScenarios.flatMap((scenario) => scenario.policies);
+  const blockedDecisionCount = activePolicyDecisions.filter((policy) => policy.outcome === "block").length;
+  const escalateDecisionCount = activePolicyDecisions.filter(
+    (policy) => policy.outcome === "escalate",
+  ).length;
+  const allowDecisionCount = activePolicyDecisions.filter((policy) => policy.outcome === "allow").length;
 
   return {
     summaryCards: [
@@ -223,38 +268,38 @@ export function buildMissionControlPageData(): MissionControlPageData {
         tone: "attention",
       },
       {
-        label: "Flagged exceptions",
-        value: `${snapshot.flaggedCount}`,
-        detail: "Mismatch, remittance drift, and evidence gaps stay visible instead of disappearing into the queue.",
+        label: "Policy interventions",
+        value: `${blockedDecisionCount + escalateDecisionCount} active controls`,
+        detail: `${blockedDecisionCount} blocked actions and ${escalateDecisionCount} approval-gated actions are currently constraining run progression.`,
         badge: "Attention",
         tone: "attention",
       },
       {
-        label: "Audit capture",
-        value: "100%",
-        detail: "Every seeded run retains events, artifacts, and receipt-ready context for later replay work.",
-        badge: "Retained",
+        label: "Allowed continuations",
+        value: `${allowDecisionCount}`,
+        detail: "Low-risk actions remain supervised but continue without unnecessary pauses.",
+        badge: "Flowing",
         tone: "positive",
       },
     ],
     postureSignals: [
       buildPostureSignal(
+        "Blocked decisions",
+        `${blockedDecisionCount}`,
+        "Contained",
+        "attention",
+      ),
+      buildPostureSignal(
+        "Approval-required",
+        `${escalateDecisionCount}`,
+        "Escalated",
+        "attention",
+      ),
+      buildPostureSignal(
         "Protected payment value",
         formatCompactCurrency(snapshot.protectedPaymentValueUsd),
         "Guarded",
-        "attention",
-      ),
-      buildPostureSignal(
-        "Runs under review",
-        `${snapshot.underReviewCount}`,
-        "Escalated",
         "neutral",
-      ),
-      buildPostureSignal(
-        "Blocked tool actions",
-        `${snapshot.blockedPolicyCount}`,
-        "Contained",
-        "attention",
       ),
     ],
     activeRuns: snapshot.activeScenarios.slice(0, 4).map((scenario) => ({
@@ -286,14 +331,36 @@ export function buildMissionControlPageData(): MissionControlPageData {
       category: event.category,
       tone: toneFromRisk(event.riskLevel),
     })),
-    flaggedItems: snapshot.flaggedScenarios.slice(0, 3).map((scenario) => ({
-      title: scenario.title,
-      runId: scenario.run.id,
-      severity: `${formatRiskLabel(scenario.run.riskLevel)} severity`,
-      summary: scenario.policies[0]?.trigger ?? scenario.narrative,
-      nextAction: scenario.run.nextAction,
-      tone: toneFromRisk(scenario.run.riskLevel),
-    })),
+    flaggedItems: snapshot.flaggedScenarios.slice(0, 3).map((scenario) => {
+      const policy = mostRestrictivePolicy(scenario);
+      return {
+        title: scenario.title,
+        runId: scenario.run.id,
+        severity: `${formatRiskLabel(scenario.run.riskLevel)} severity`,
+        decision: formatPolicyPosture(policy?.outcome ?? "escalate"),
+        summary: policy?.trigger ?? scenario.narrative,
+        evidence: `${scenario.artifacts.length} evidence artifact(s)`,
+        nextAction: scenario.run.nextAction,
+        tone: policy ? toneFromPolicyOutcome(policy.outcome) : toneFromRisk(scenario.run.riskLevel),
+      };
+    }),
+    decisionPosture: snapshot.activeScenarios
+      .filter((scenario) => scenario.run.riskLevel !== "low" || scenario.run.status !== "running")
+      .slice(0, 4)
+      .map((scenario) => {
+        const policy = mostRestrictivePolicy(scenario);
+        const outcome = policy?.outcome ?? "allow";
+
+        return {
+          runId: scenario.run.id,
+          workflow: scenario.run.workflow,
+          posture: formatPolicyPosture(outcome),
+          risk: `${formatRiskLabel(scenario.run.riskLevel)} risk`,
+          reason: policy?.summary ?? "No named policy trigger attached to this run.",
+          nextControl: scenario.run.nextAction,
+          tone: toneFromPolicyOutcome(outcome),
+        };
+      }),
     workers: snapshot.workers.map((worker) => ({
       name: worker.name,
       role: worker.role,
@@ -652,12 +719,37 @@ export function buildRunsPageData(): RunsPageData {
       overview.spotlight.steps[index].mode === "execute_ready" &&
       overview.spotlight.steps[index].status !== "completed",
   );
+  const spotlightPolicies = overview.spotlight.policies
+    .slice()
+    .sort((left, right) => policyOutcomePriority[left.outcome] - policyOutcomePriority[right.outcome]);
+  const spotlightBlockedCount = spotlightPolicies.filter((policy) => policy.outcome === "block").length;
+  const spotlightEscalateCount = spotlightPolicies.filter(
+    (policy) => policy.outcome === "escalate",
+  ).length;
+  const spotlightAllowCount = spotlightPolicies.filter((policy) => policy.outcome === "allow").length;
+  const spotlightPrimaryPolicy = spotlightPolicies[0];
+  const spotlightPosture = formatPolicyPosture(spotlightPrimaryPolicy?.outcome ?? "allow");
+  const spotlightPolicySummary = spotlightPrimaryPolicy
+    ? `${spotlightPrimaryPolicy.summary} Trigger: ${spotlightPrimaryPolicy.trigger}`
+    : "No explicit policy decision was attached to this run.";
+  const spotlightPolicyDecisions = spotlightPolicies.map((policy) => ({
+    id: policy.id,
+    name: policy.name,
+    scope: policy.scope,
+    outcomeLabel: formatPolicyPosture(policy.outcome),
+    severityLabel: `${formatRiskLabel(policy.severity)} severity`,
+    trigger: policy.trigger,
+    summary: policy.summary,
+    nextAction: overview.spotlight.run.nextAction,
+    evidence: `${overview.spotlight.artifacts.length} linked evidence artifact(s)`,
+    tone: toneFromPolicyOutcomeForRun(policy.outcome),
+  }));
 
   return {
     eyebrow: "Execution Surface",
     title: "Run detail and worker orchestration",
     description:
-      "Run surfaces now expose worker ownership, stage progression, and explicit handoffs so orchestration remains visible while runs move or pause.",
+      "Run surfaces now expose worker ownership, policy outcomes, and risk rationale so orchestration and control posture stay visible while runs move or pause.",
     summaryCards: [
       { label: "Active runs", value: `${overview.openRunCount} in motion` },
       {
@@ -666,13 +758,20 @@ export function buildRunsPageData(): RunsPageData {
         tone: "attention",
       },
       {
-        label: "Mode split",
-        value: `${shadowRunCount} shadow / ${overview.executeReadyCount} execute-ready`,
+        label: "Policy blocks",
+        value: `${overview.activeScenarios.reduce(
+          (count, scenario) => count + scenario.policies.filter((policy) => policy.outcome === "block").length,
+          0,
+        )} active`,
+        tone: "attention",
       },
       {
-        label: "Completed receipts",
-        value: `${overview.completedRunCount} retained`,
-        tone: "positive",
+        label: "Approval gates",
+        value: `${overview.activeScenarios.reduce(
+          (count, scenario) => count + scenario.policies.filter((policy) => policy.outcome === "escalate").length,
+          0,
+        )} active`,
+        tone: "attention",
       },
     ],
     signals: [
@@ -686,13 +785,19 @@ export function buildRunsPageData(): RunsPageData {
         detail: activeStep.title,
       },
       {
-        label: "Spotlight mode",
-        detail: formatMode(overview.spotlight.run.mode),
+        label: "Spotlight posture",
+        detail: spotlightPosture,
+        emphasis: `${formatRiskLabel(overview.spotlight.run.riskLevel)} risk`,
       },
     ],
     runQueue: overview.activeScenarios.map((scenario) => {
       const completedSteps = scenario.steps.filter((step) => step.status === "completed").length;
       const owner = getWorkerById(scenario.run.ownerWorkerId);
+      const scenarioPrimaryPolicy = mostRestrictivePolicy(scenario);
+      const scenarioPosture = formatPolicyPosture(scenarioPrimaryPolicy?.outcome ?? "allow");
+      const scenarioSummary = scenarioPrimaryPolicy
+        ? `${scenarioPrimaryPolicy.summary} Trigger: ${scenarioPrimaryPolicy.trigger}`
+        : "No named policy trigger attached.";
 
       return {
         id: scenario.run.id,
@@ -703,6 +808,9 @@ export function buildRunsPageData(): RunsPageData {
         statusLabel: formatRunStatus(scenario.run.status),
         riskLabel: `${formatRiskLabel(scenario.run.riskLevel)} risk`,
         modeLabel: formatMode(scenario.run.mode),
+        decisionLabel: scenarioPosture,
+        decisionTone: toneFromPolicyOutcomeForRun(scenarioPrimaryPolicy?.outcome ?? "allow"),
+        policySummary: scenarioSummary,
         ownerName: owner?.name ?? "Unknown worker",
         ownerRole: owner?.role ?? "Unassigned role",
         etaLabel: etaLabel(scenario.run.etaMinutes),
@@ -722,6 +830,8 @@ export function buildRunsPageData(): RunsPageData {
       ownerName: spotlightOwner?.name ?? "Unknown worker",
       ownerRole: spotlightOwner?.role ?? "Unassigned role",
       ownerPosture: spotlightOwner?.posture ?? "Unknown posture",
+      policyPosture: spotlightPosture,
+      policySummary: spotlightPolicySummary,
       completionLabel: `${completedSpotlightSteps}/${overview.spotlight.steps.length} stages complete`,
       activeStepTitle: activeStep.title,
       handoffs: spotlightSteps
@@ -737,6 +847,15 @@ export function buildRunsPageData(): RunsPageData {
     },
     stepGroups: groupedSteps,
     timeline: [...eventTimeline, ...handoffTimeline],
+    policyPosture: {
+      blockedCount: spotlightBlockedCount,
+      escalateCount: spotlightEscalateCount,
+      allowCount: spotlightAllowCount,
+      currentRiskLabel: `${formatRiskLabel(overview.spotlight.run.riskLevel)} risk`,
+      currentPosture: spotlightPosture,
+      topConstraint: spotlightPolicySummary,
+      decisions: spotlightPolicyDecisions,
+    },
     executionMode: {
       runModeLabel: formatMode(overview.spotlight.run.mode),
       shadowRunCount,
@@ -746,7 +865,7 @@ export function buildRunsPageData(): RunsPageData {
       nextExecuteWorker: nextExecuteStep?.workerName ?? spotlightOwner?.name ?? "No pending worker",
     },
     footerNote:
-      "Run progression stays deterministic and inspectable so later policy, approval, and replay waves can layer in without replacing the orchestration story.",
+      "Run progression and policy decisions stay deterministic and inspectable so approval and replay waves can layer in without replacing this control story.",
   };
 }
 
@@ -825,55 +944,146 @@ export function buildApprovalsPageContent(): PageContentConfig {
   };
 }
 
-export function buildPoliciesPageContent(): PageContentConfig {
+export function buildPoliciesPageData(): PoliciesPageData {
   const overview = selectPoliciesOverview();
-  const activeTriggers = overview.rules.filter((rule) =>
-    rule.scenarios.some((scenario) => scenario.run.status !== "completed"),
+  const activeDecisionRefs = overview.rules.flatMap(({ policy, scenarios }) =>
+    scenarios
+      .filter((scenario) => scenario.run.status !== "completed")
+      .map((scenario) => ({ policy, scenario })),
   );
+  const sortedActiveDecisionRefs = activeDecisionRefs.sort(
+    (left, right) =>
+      riskPriority[left.scenario.run.riskLevel] - riskPriority[right.scenario.run.riskLevel] ||
+      policyOutcomePriority[left.policy.outcome] - policyOutcomePriority[right.policy.outcome],
+  );
+  const explanationFocus = sortedActiveDecisionRefs[0];
+  const focusArtifacts = explanationFocus
+    ? explanationFocus.scenario.artifacts.map((artifact) => artifact.title)
+    : ["No evidence artifacts linked."];
 
   return {
     eyebrow: "Guardrail Surface",
     title: "Policies, thresholds, and control posture",
     description:
-      "The policies preview is now backed by seeded rules and concrete triggers, keeping the language operational instead of abstract governance filler.",
+      "Policy surfaces now expose concrete outcomes, rule triggers, and run-level explanation so the trust layer reads as an operational control system.",
     summaryCards: [
-      { label: "Rule set", value: `${overview.rules.length} seeded rules` },
+      { label: "Rule set", value: `${overview.rules.length} active rules` },
       {
-        label: "Escalate rules",
-        value: `${overview.escalateCount} active`,
+        label: "Approval-required rules",
+        value: `${overview.escalateCount} escalate`,
         tone: "attention",
       },
       {
-        label: "Block rules",
+        label: "Blocking rules",
         value: `${overview.blockCount} hard stops`,
         tone: "attention",
       },
       {
-        label: "Allow rules",
-        value: `${overview.allowCount} supervised allows`,
+        label: "Live triggers",
+        value: `${overview.activeTriggerCount} linked runs`,
         tone: "positive",
       },
     ],
     signals: [
-      { label: "Active triggers", detail: `${overview.activeTriggerCount} scenarios in play` },
-      { label: "Policy tone", detail: "Concrete triggers and named outcomes" },
+      {
+        label: "Most constrained run",
+        detail: explanationFocus?.scenario.run.id ?? "No active run posture",
+        emphasis: explanationFocus ? formatPolicyPosture(explanationFocus.policy.outcome) : "No trigger",
+      },
+      {
+        label: "Current focus policy",
+        detail: explanationFocus?.policy.name ?? "No focused policy",
+      },
     ],
-    primaryTitle: "Seeded rule catalog",
-    primaryEyebrow: "Shared control contracts",
-    primaryItems: overview.rules.map(({ policy, scenarios }) => ({
-      title: policy.name,
-      detail: `${policy.summary} Trigger: ${policy.trigger}${scenarios[0] ? ` Impacted run: ${scenarios[0].run.id}.` : ""}`,
-      tag: formatOutcome(policy.outcome),
+    policyRules: overview.rules.map(({ policy, scenarios }) => {
+      const activeCoverage = scenarios.filter((scenario) => scenario.run.status !== "completed").length;
+      return {
+        id: policy.id,
+        name: policy.name,
+        scope: policy.scope,
+        summary: policy.summary,
+        trigger: `Trigger: ${policy.trigger}`,
+        outcomeLabel: formatPolicyPosture(policy.outcome),
+        severityLabel: `${formatRiskLabel(policy.severity)} severity`,
+        coverageLabel: `${activeCoverage}/${scenarios.length} linked run(s) currently active`,
+        tone: toneFromPolicyOutcome(policy.outcome),
+      };
+    }),
+    activeDecisions: sortedActiveDecisionRefs.slice(0, 6).map(({ policy, scenario }) => ({
+      id: `${scenario.run.id}-${policy.id}`,
+      runId: scenario.run.id,
+      workflow: scenario.run.workflow,
+      policyName: policy.name,
+      postureLabel: formatPolicyPosture(policy.outcome),
+      riskLabel: `${formatRiskLabel(policy.severity)} severity`,
+      reason: `${policy.summary} ${policy.trigger}`,
+      nextAction: scenario.run.nextAction,
+      evidence: `${scenario.artifacts.length} evidence artifact(s) linked`,
+      tone: toneFromPolicyOutcome(policy.outcome),
     })),
-    secondaryTitle: "Triggered policy outcomes",
-    secondaryEyebrow: "Scenario-linked decisions",
-    secondaryItems: activeTriggers.slice(0, 4).map(({ policy, scenarios }) => ({
-      title: `${scenarios[0]?.run.id ?? "Run"} · ${policy.scope}`,
-      detail: `${policy.trigger} Next visible action: ${scenarios[0]?.run.nextAction ?? "Await operator review."}`,
-      tag: `${formatOutcome(policy.outcome)} · ${formatRiskLabel(policy.severity)}`,
+    explanation: {
+      title: explanationFocus
+        ? `${explanationFocus.policy.name} · ${explanationFocus.scenario.run.id}`
+        : "No active policy trigger",
+      postureLabel: explanationFocus
+        ? formatPolicyPosture(explanationFocus.policy.outcome)
+        : "Allowed",
+      riskLabel: explanationFocus
+        ? `${formatRiskLabel(explanationFocus.policy.severity)} severity`
+        : "Low severity",
+      why: explanationFocus
+        ? `${explanationFocus.policy.summary} Trigger: ${explanationFocus.policy.trigger}`
+        : "No policy trigger is active; the system remains in a supervised allow posture.",
+      requiredAction: explanationFocus
+        ? explanationFocus.scenario.run.nextAction
+        : "Continue monitoring for new policy events.",
+      evidence: focusArtifacts,
+    },
+    outcomeGuide: [
+      {
+        label: "Allowed",
+        detail: "Action can continue in the supervised path with policy context retained.",
+        tone: "positive",
+      },
+      {
+        label: "Requires approval",
+        detail: "Action pauses for named reviewer authorization before execution can resume.",
+        tone: "attention",
+      },
+      {
+        label: "Blocked",
+        detail: "Action is contained until evidence or controls clear the hard-stop rule.",
+        tone: "attention",
+      },
+    ],
+  };
+}
+
+export function buildPoliciesPageContent(): PageContentConfig {
+  const page = buildPoliciesPageData();
+
+  return {
+    eyebrow: page.eyebrow,
+    title: page.title,
+    description: page.description,
+    summaryCards: page.summaryCards,
+    signals: page.signals,
+    primaryTitle: "Policy catalog",
+    primaryEyebrow: "Rule definitions",
+    primaryItems: page.policyRules.map((rule) => ({
+      title: rule.name,
+      detail: `${rule.summary} ${rule.trigger}`,
+      tag: `${rule.outcomeLabel} · ${rule.severityLabel}`,
+    })),
+    secondaryTitle: "Active policy outcomes",
+    secondaryEyebrow: "Run-level posture",
+    secondaryItems: page.activeDecisions.map((decision) => ({
+      title: `${decision.runId} · ${decision.postureLabel}`,
+      detail: `${decision.policyName}. ${decision.reason} Next: ${decision.nextAction}`,
+      tag: decision.riskLabel,
     })),
     footerNote:
-      "Rules stay domain-readable and reusable: routes consume adapted view models, while fixtures and policy contracts remain separate.",
+      "Policy decisions and explanation data are now sourced from shared adapters instead of static placeholder prose.",
   };
 }
 

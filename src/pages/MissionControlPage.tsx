@@ -15,6 +15,7 @@ export function MissionControlPage() {
     activeRuns,
     activity,
     approvals,
+    decisionPosture,
     flaggedItems,
     postureSignals,
     spotlight,
@@ -42,7 +43,11 @@ export function MissionControlPage() {
       }
       secondaryColumn={
         <>
-          <RiskPostureCard flaggedItems={flaggedItems} postureSignals={postureSignals} />
+          <RiskPostureCard
+            flaggedItems={flaggedItems}
+            postureSignals={postureSignals}
+            decisionPosture={decisionPosture}
+          />
           <ApprovalsCard approvals={approvals} />
           <ScenarioSpotlightCard spotlight={spotlight} />
         </>

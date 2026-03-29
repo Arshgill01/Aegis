@@ -821,6 +821,147 @@ select {
   line-height: 1.45;
 }
 
+.agents-lanes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.72rem;
+}
+
+.agents-lane,
+.agents-assignment,
+.agents-handoff,
+.agents-activity__body {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(10, 13, 18, 0.76);
+}
+
+.agents-lane,
+.agents-assignment,
+.agents-handoff {
+  padding: 0.85rem;
+}
+
+.agents-lane__header,
+.agents-lane__footer,
+.agents-assignment__header,
+.agents-assignment__footer,
+.agents-handoff__header,
+.agents-handoff__footer,
+.agents-activity__meta,
+.agents-activity__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.agents-lane__header strong,
+.agents-assignment__identity strong,
+.agents-handoff__header strong,
+.agents-activity__meta strong {
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.agents-lane__header p,
+.agents-assignment__identity span,
+.agents-assignment__account,
+.agents-handoff p,
+.agents-activity__meta span,
+.agents-activity__footer span {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.79rem;
+  line-height: 1.45;
+}
+
+.agents-lane__metrics,
+.agents-assignment__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 0.85rem;
+  margin-top: 0.82rem;
+}
+
+.agents-lane__metrics span,
+.agents-assignment__grid span,
+.agents-lane__footer span,
+.agents-handoff__footer span {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.agents-lane__metrics strong,
+.agents-assignment__grid strong,
+.agents-assignment__footer strong {
+  display: block;
+  margin-top: 0.16rem;
+  font-size: 0.9rem;
+  line-height: 1.38;
+}
+
+.agents-lane__focus,
+.agents-handoff__route,
+.agents-activity__body p {
+  margin: 0.72rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.48;
+}
+
+.agents-lane__footer,
+.agents-assignment__footer,
+.agents-handoff__footer,
+.agents-lane__activity {
+  margin-top: 0.72rem;
+}
+
+.agents-lane__activity {
+  padding-top: 0.62rem;
+  border-top: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.agents-assignment-list,
+.agents-handoff-list,
+.agents-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.72rem;
+}
+
+.agents-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.agents-activity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.72rem;
+  align-items: flex-start;
+}
+
+.agents-activity__body {
+  padding: 0.78rem 0.82rem;
+}
+
+.agents-activity__body p {
+  margin-top: 0.56rem;
+}
+
+.agents-activity__footer {
+  margin-top: 0.66rem;
+}
+
 @media (max-width: 1200px) {
   .app-shell {
     grid-template-columns: 280px minmax(0, 1fr);
@@ -837,7 +978,8 @@ select {
   }
 
   .mission-posture,
-  .mission-workers {
+  .mission-workers,
+  .agents-lanes {
     grid-template-columns: 1fr;
   }
 }
@@ -905,6 +1047,22 @@ select {
   }
 
   .mission-run__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agents-lane__header,
+  .agents-lane__footer,
+  .agents-assignment__header,
+  .agents-assignment__footer,
+  .agents-handoff__header,
+  .agents-handoff__footer,
+  .agents-activity__meta,
+  .agents-activity__footer {
+    flex-direction: column;
+  }
+
+  .agents-lane__metrics,
+  .agents-assignment__grid {
     grid-template-columns: 1fr;
   }
 }

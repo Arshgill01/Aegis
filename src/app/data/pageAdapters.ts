@@ -20,6 +20,11 @@ import {
 } from "../../domain/selectors";
 import type { PageContentConfig } from "../../pages/pageContent";
 import type {
+  AgentsPageData,
+  AgentSurfaceTone,
+  WorkerHandoffSummary,
+} from "../../pages/agents/agentsData";
+import type {
   MissionControlPageData,
   MissionTone,
   SummaryCardItem,
@@ -96,6 +101,31 @@ function etaLabel(etaMinutes: number) {
 
 function toneFromRisk(riskLevel: RiskLevel): MissionTone {
   return riskLevel === "low" ? "positive" : "attention";
+}
+
+const riskPriority: Record<RiskLevel, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+function byRiskAndEta(left: WorkflowScenario, right: WorkflowScenario) {
+  return (
+    riskPriority[left.run.riskLevel] - riskPriority[right.run.riskLevel] ||
+    left.run.etaMinutes - right.run.etaMinutes
+  );
+}
+
+function toneFromRunRisk(riskLevel: RiskLevel, mode: ExecutionMode): AgentSurfaceTone {
+  if (riskLevel === "high") {
+    return "attention";
+  }
+
+  if (mode === "execute_ready" && riskLevel === "low") {
+    return "positive";
+  }
+
+  return riskLevel === "medium" ? "attention" : "neutral";
 }
 
 function workerName(workerId: string) {
@@ -231,64 +261,167 @@ export function buildMissionControlPageData(): MissionControlPageData {
   };
 }
 
-export function buildAgentsPageContent(): PageContentConfig {
+export function buildAgentsPageData(): AgentsPageData {
   const overview = selectAgentsOverview();
-  const highestLoadWorker = overview.workers.reduce((highest, worker) =>
-    worker.loadPercent > highest.loadPercent ? worker : highest,
+  const activeScenarios = overview.activeScenarios.slice().sort(byRiskAndEta);
+  const allActiveSteps = activeScenarios.flatMap((scenario) => scenario.steps);
+  const allHandoffs = activeScenarios.flatMap<WorkerHandoffSummary>((scenario) =>
+    scenario.steps.flatMap((step, index) => {
+      if (index === 0) {
+        return [];
+      }
+
+      const previousStep = scenario.steps[index - 1];
+      if (previousStep.workerId === step.workerId) {
+        return [];
+      }
+
+      return [
+        {
+          id: `${scenario.id}-${previousStep.id}-${step.id}`,
+          runId: scenario.run.id,
+          accountName: scenario.run.accountName,
+          fromWorker: workerName(previousStep.workerId),
+          toWorker: workerName(step.workerId),
+          stepTitle: step.title,
+          mode: formatMode(step.mode),
+          risk: formatRiskLabel(scenario.run.riskLevel) as "Low" | "Medium" | "High",
+          tone: toneFromRunRisk(scenario.run.riskLevel, step.mode),
+        },
+      ];
+    }),
   );
-  const approvalWorker = overview.workers.find((worker) => worker.id === "worker-approval");
+
+  const workerLanes = overview.workers
+    .map((worker) => {
+      const ownedRuns = activeScenarios.filter((scenario) => scenario.run.ownerWorkerId === worker.id);
+      const workerSteps = allActiveSteps.filter((step) => step.workerId === worker.id);
+      const inFlightSteps = workerSteps.filter((step) =>
+        ["running", "queued", "waiting_for_approval", "blocked"].includes(step.status),
+      ).length;
+      const blockedSteps = workerSteps.filter((step) =>
+        ["waiting_for_approval", "blocked"].includes(step.status),
+      ).length;
+      const executeReadySteps = workerSteps.filter((step) => step.mode === "execute_ready").length;
+      const latestEvent = overview.recentEvents.find((event) => event.actorName === worker.name);
+      const tone: AgentSurfaceTone =
+        worker.loadPercent >= 85 || blockedSteps > 0 || worker.posture === "Escalated"
+          ? "attention"
+          : executeReadySteps > 0
+            ? "positive"
+            : "neutral";
+
+      return {
+        id: worker.id,
+        name: worker.name,
+        role: worker.role,
+        focus: worker.focus,
+        posture: worker.posture,
+        queueDepth: worker.queueDepth,
+        loadPercent: worker.loadPercent,
+        ownedRuns: ownedRuns.length,
+        inFlightSteps,
+        blockedSteps,
+        executeReadySteps,
+        latestActivity: latestEvent ? `${formatEventTime(latestEvent.timestamp)} · ${latestEvent.title}` : undefined,
+        tone,
+      };
+    })
+    .sort((left, right) => right.loadPercent - left.loadPercent);
+
+  const highestLoadWorker = workerLanes[0];
+  const executeReadyCoverage = workerLanes.filter((worker) => worker.executeReadySteps > 0).length;
+  const priorityScenario = activeScenarios[0];
 
   return {
-    eyebrow: "Worker Surface",
-    title: "Agent roles and supervision lanes",
+    eyebrow: "Worker Operations",
+    title: "Agents supervising live workflow lanes",
     description:
-      "Seeded worker lanes now show real queue pressure, ownership, and recent participation without coupling the page to fixture internals.",
+      "Worker lanes, ownership, and handoff visibility stay explicit so reviewers can supervise orchestration without dropping into run-level internals.",
     summaryCards: [
-      { label: "Worker lanes", value: `${overview.workers.length} active roles` },
-      { label: "Live assignments", value: `${overview.activeRunCount} runs in motion` },
+      { label: "Worker lanes", value: `${workerLanes.length} active roles` },
       {
-        label: "Escalation owners",
-        value: `${overview.escalationOwnerCount} lanes on exception duty`,
-        tone: "attention",
+        label: "Live run ownership",
+        value: `${new Set(activeScenarios.map((scenario) => scenario.run.ownerWorkerId)).size} lanes owning ${activeScenarios.length} runs`,
       },
       {
-        label: "Execution posture",
-        value: `${overview.shadowRunCount} shadow / ${overview.activeRunCount - overview.shadowRunCount} execute-ready`,
+        label: "Visible handoffs",
+        value: `${allHandoffs.length} cross-worker transitions`,
         tone: "positive",
+      },
+      {
+        label: "Escalation pressure",
+        value: `${workerLanes.filter((worker) => worker.tone === "attention").length} lanes on gated work`,
+        tone: "attention",
       },
     ],
     signals: [
       {
         label: "Highest load",
-        detail: `${highestLoadWorker.name} at ${highestLoadWorker.loadPercent}%`,
+        detail: highestLoadWorker
+          ? `${highestLoadWorker.name} at ${highestLoadWorker.loadPercent}%`
+          : "No active worker lane",
       },
       {
-        label: "Approval routing",
-        detail: approvalWorker
-          ? `${approvalWorker.queueDepth} gates held by ${approvalWorker.name}`
-          : "Approval queue is stable",
+        label: "Execute-ready coverage",
+        detail: `${executeReadyCoverage} lane(s) currently touching execute-ready steps`,
+      },
+      {
+        label: "Priority run owner",
+        detail: priorityScenario
+          ? `${workerName(priorityScenario.run.ownerWorkerId)} on ${priorityScenario.run.id}`
+          : "No active run ownership",
       },
     ],
-    primaryTitle: "Active worker lanes",
-    primaryEyebrow: "Seeded operations",
-    primaryItems: overview.workers.map((worker) => ({
-      title: worker.name,
-      detail: `${worker.role}. ${worker.focus}`,
-      tag: `${worker.queueDepth} queued · ${worker.posture} · ${worker.loadPercent}%`,
-    })),
-    secondaryTitle: "Recent worker participation",
-    secondaryEyebrow: "Seeded telemetry",
-    secondaryItems: overview.recentEvents.slice(0, 4).map((event) => {
-      const scenario = getScenarioByRunId(event.runId);
+    workerLanes,
+    assignments: activeScenarios.map((scenario) => {
+      const owner = workerName(scenario.run.ownerWorkerId);
+      const supportLane = Array.from(
+        new Set(
+          scenario.steps
+            .map((step) => workerName(step.workerId))
+            .filter((worker) => worker !== owner),
+        ),
+      );
+      const gateCount = scenario.steps.filter((step) =>
+        ["waiting_for_approval", "blocked"].includes(step.status),
+      ).length;
+      const handoffCount = scenario.steps.reduce((count, step, index) => {
+        if (index === 0 || scenario.steps[index - 1].workerId === step.workerId) {
+          return count;
+        }
+
+        return count + 1;
+      }, 0);
 
       return {
-        title: event.title,
-        detail: `${event.detail}${scenario ? ` Run ${scenario.run.id} · ${scenario.run.accountName}.` : ""}`,
-        tag: event.actorName,
+        runId: scenario.run.id,
+        workflow: scenario.run.workflow,
+        accountName: scenario.run.accountName,
+        owner,
+        stage: scenario.run.currentStage,
+        nextAction: scenario.run.nextAction,
+        mode: formatMode(scenario.run.mode),
+        risk: formatRiskLabel(scenario.run.riskLevel) as "Low" | "Medium" | "High",
+        handoffCount,
+        supportLane: supportLane.length > 0 ? supportLane.join(", ") : "No supporting lane",
+        gateLabel: gateCount > 0 ? `${gateCount} gated step(s)` : "Flowing",
+        tone: toneFromRunRisk(scenario.run.riskLevel, scenario.run.mode),
       };
     }),
-    footerNote:
-      "The route now reads from seeded worker, run, and event data so later orchestration work can deepen behavior without replacing the page contract.",
+    handoffs: allHandoffs.slice(0, 6),
+    recentActivity: overview.recentEvents.slice(0, 6).map((event) => {
+      const scenario = getScenarioByRunId(event.runId);
+      return {
+        id: event.id,
+        title: event.title,
+        detail: event.detail,
+        actor: event.actorName,
+        runLabel: scenario ? `${scenario.run.id} · ${scenario.run.accountName}` : event.runId,
+        time: formatEventTime(event.timestamp),
+        tone: toneFromRisk(event.riskLevel),
+      };
+    }),
   };
 }
 

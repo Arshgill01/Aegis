@@ -7,18 +7,16 @@ import type {
   StepStatus,
   ToolInvocation,
 } from "./action";
+import type {
+  PolicyDecisionOutcome,
+  PolicyRuleDefinition,
+} from "./policy";
 import type { WorkerId } from "./workers";
 import type { Artifact } from "./audit";
 
-export type PolicyOutcome = "allow" | "escalate" | "block";
+export type PolicyOutcome = PolicyDecisionOutcome;
 
-export type PolicyRule = {
-  id: string;
-  name: string;
-  description: string;
-  outcome: PolicyOutcome;
-  scope: string;
-};
+export type PolicyRule = PolicyRuleDefinition;
 
 export type RiskAssessment = {
   id: string;

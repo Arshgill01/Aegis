@@ -34,15 +34,15 @@ export function MissionControlPage() {
       }))}
       primaryColumn={
         <>
-          <ActiveRunsCard runs={activeRuns} />
           <ActivityCard entries={activity} />
+          <ActiveRunsCard runs={activeRuns} />
           <WorkerActivityCard workers={workers} />
         </>
       }
       secondaryColumn={
         <>
-          <ApprovalsCard approvals={approvals} />
           <RiskPostureCard flaggedItems={flaggedItems} postureSignals={postureSignals} />
+          <ApprovalsCard approvals={approvals} />
           <ScenarioSpotlightCard spotlight={spotlight} />
         </>
       }

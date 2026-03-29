@@ -102,6 +102,63 @@ export type TaskStep = {
   blockedReason?: string;
 };
 
+export type WorkflowStage = {
+  id: string;
+  stepId: string;
+  key: string;
+  title: string;
+  sequence: number;
+  status: StepStatus;
+  ownerWorkerId: WorkerId;
+  executionMode: ExecutionMode;
+  dependsOnStageIds: string[];
+  startedAt?: string;
+  completedAt?: string;
+  updatedAt: string;
+};
+
+export type StageStatusTransition = {
+  id: string;
+  sequence: number;
+  stageId: string;
+  stepId: string;
+  fromStatus?: StepStatus;
+  toStatus: StepStatus;
+  workerId: WorkerId;
+  executionMode: ExecutionMode;
+  occurredAt: string;
+};
+
+export type WorkerHandoff = {
+  id: string;
+  sequence: number;
+  stageId: string;
+  stepId: string;
+  fromWorkerId?: WorkerId;
+  toWorkerId: WorkerId;
+  executionMode: ExecutionMode;
+  occurredAt: string;
+};
+
+export type ExecutionModeTransition = {
+  id: string;
+  sequence: number;
+  fromMode: ExecutionMode;
+  toMode: ExecutionMode;
+  occurredAt: string;
+  stageId?: string;
+  stepId?: string;
+  workerId?: WorkerId;
+};
+
+export type WorkflowRunOrchestration = {
+  stages: WorkflowStage[];
+  currentStageId?: string;
+  stageHistory: StageStatusTransition[];
+  handoffs: WorkerHandoff[];
+  modeHistory: ExecutionModeTransition[];
+};
+
 export type WorkflowRun = {
   id: string;
   scenarioId: string;
@@ -113,10 +170,12 @@ export type WorkflowRun = {
   riskLevel: RiskLevel;
   currentStepId?: string;
   currentWorkerId?: WorkerId;
+  currentStageId?: string;
   artifactIds: string[];
   controlRefs: ControlReference[];
   eventIds: string[];
   steps: TaskStep[];
+  orchestration: WorkflowRunOrchestration;
   createdAt: string;
   startedAt?: string;
   updatedAt: string;

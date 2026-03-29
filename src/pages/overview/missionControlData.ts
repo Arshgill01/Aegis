@@ -1,11 +1,11 @@
-import type { StatusTone } from "../../components/ui/StatusBadge";
+export type MissionTone = "neutral" | "attention" | "positive";
 
 export type SummaryCardItem = {
   label: string;
   value: string;
   detail: string;
   badge: string;
-  tone: StatusTone;
+  tone: MissionTone;
 };
 
 export type RunLane = {
@@ -28,7 +28,7 @@ export type ApprovalPreview = {
   owner: string;
   dueBy: string;
   riskLabel: string;
-  tone: StatusTone;
+  tone: MissionTone;
 };
 
 export type ActivityEvent = {
@@ -37,7 +37,7 @@ export type ActivityEvent = {
   detail: string;
   actor: string;
   category: string;
-  tone: StatusTone;
+  tone: MissionTone;
 };
 
 export type FlaggedItem = {
@@ -46,7 +46,7 @@ export type FlaggedItem = {
   severity: string;
   summary: string;
   nextAction: string;
-  tone: StatusTone;
+  tone: MissionTone;
 };
 
 export type WorkerLane = {
@@ -56,7 +56,7 @@ export type WorkerLane = {
   focus: string;
   posture: string;
   load: string;
-  tone: StatusTone;
+  tone: MissionTone;
 };
 
 export type ScenarioSpotlight = {
@@ -73,28 +73,28 @@ export const missionControlSeed = {
       value: "14",
       detail: "11 runs are shadowing live work while 3 are cleared for controlled execution.",
       badge: "Live",
-      tone: "info",
+      tone: "neutral",
     },
     {
       label: "Human gates",
       value: "3",
       detail: "Two payment releases and one vendor exception are waiting on named approvers.",
       badge: "Queued",
-      tone: "warning",
+      tone: "attention",
     },
     {
       label: "Flagged exceptions",
       value: "2",
       detail: "One three-way mismatch and one bank-detail drift case need immediate review.",
       badge: "Attention",
-      tone: "danger",
+      tone: "attention",
     },
     {
       label: "Audit capture",
       value: "100%",
       detail: "Every surfaced run retains an evidence trail and receipt placeholder for replay.",
       badge: "Retained",
-      tone: "success",
+      tone: "positive",
     },
   ] satisfies SummaryCardItem[],
   postureSignals: [
@@ -103,21 +103,21 @@ export const missionControlSeed = {
       value: "$482K",
       detail: "",
       badge: "Guarded",
-      tone: "warning",
+      tone: "attention",
     },
     {
       label: "Runs under review",
       value: "5",
       detail: "",
       badge: "Escalated",
-      tone: "info",
+      tone: "neutral",
     },
     {
       label: "Blocked tool actions",
       value: "2",
       detail: "",
       badge: "Contained",
-      tone: "danger",
+      tone: "attention",
     },
   ] satisfies SummaryCardItem[],
   activeRuns: [
@@ -175,7 +175,7 @@ export const missionControlSeed = {
       owner: "AP Controller · Priya Shah",
       dueBy: "Due in 18 min",
       riskLabel: "Mismatch hold",
-      tone: "danger",
+      tone: "attention",
     },
     {
       id: "APR-204",
@@ -185,7 +185,7 @@ export const missionControlSeed = {
       owner: "Vendor Risk Lead · Marcus Hale",
       dueBy: "Due in 42 min",
       riskLabel: "Account drift",
-      tone: "warning",
+      tone: "attention",
     },
     {
       id: "APR-205",
@@ -195,7 +195,7 @@ export const missionControlSeed = {
       owner: "Operations Finance · Elena Ruiz",
       dueBy: "Due in 55 min",
       riskLabel: "Tolerance override",
-      tone: "warning",
+      tone: "attention",
     },
   ] satisfies ApprovalPreview[],
   activity: [
@@ -205,7 +205,7 @@ export const missionControlSeed = {
       detail: "Northwind payment release halted after the worker attached a three-way mismatch receipt.",
       actor: "Approval Coordinator",
       category: "Escalation",
-      tone: "danger",
+      tone: "attention",
     },
     {
       time: "09:36",
@@ -213,7 +213,7 @@ export const missionControlSeed = {
       detail: "Historical remittance patterns were bundled before the account-change approval request opened.",
       actor: "Risk Worker",
       category: "Evidence",
-      tone: "warning",
+      tone: "attention",
     },
     {
       time: "09:28",
@@ -221,7 +221,7 @@ export const missionControlSeed = {
       detail: "PO match and invoice metadata aligned, so the posting package moved into execute-ready state.",
       actor: "Execution Worker",
       category: "Advance",
-      tone: "success",
+      tone: "positive",
     },
     {
       time: "09:22",
@@ -229,7 +229,7 @@ export const missionControlSeed = {
       detail: "Missing receiving proof triggered a handoff into the risk lane instead of automatic posting.",
       actor: "Intake Worker",
       category: "Handoff",
-      tone: "info",
+      tone: "neutral",
     },
   ] satisfies ActivityEvent[],
   flaggedItems: [
@@ -239,7 +239,7 @@ export const missionControlSeed = {
       severity: "High severity",
       summary: "Invoice total exceeds the matched purchase order and the worker correctly refused execution.",
       nextAction: "Controller review required",
-      tone: "danger",
+      tone: "attention",
     },
     {
       title: "Aperture remittance profile changed mid-cycle",
@@ -247,7 +247,7 @@ export const missionControlSeed = {
       severity: "Medium severity",
       summary: "Bank details shifted before the prior invoice batch fully settled, so vendor validation remains shadow-only.",
       nextAction: "Risk lead validation required",
-      tone: "warning",
+      tone: "attention",
     },
   ] satisfies FlaggedItem[],
   workers: [
@@ -258,7 +258,7 @@ export const missionControlSeed = {
       focus: "Normalizing inbound invoice packets and assigning them into workflow lanes.",
       posture: "Stable",
       load: "72%",
-      tone: "success",
+      tone: "positive",
     },
     {
       name: "Vendor Review Worker",
@@ -267,7 +267,7 @@ export const missionControlSeed = {
       focus: "Cross-checking bank detail updates before any payment release can resume.",
       posture: "Watching",
       load: "64%",
-      tone: "warning",
+      tone: "attention",
     },
     {
       name: "Risk Worker",
@@ -276,7 +276,7 @@ export const missionControlSeed = {
       focus: "Building explainable mismatch packets for controller review.",
       posture: "Escalated",
       load: "88%",
-      tone: "danger",
+      tone: "attention",
     },
     {
       name: "Execution Worker",
@@ -285,7 +285,7 @@ export const missionControlSeed = {
       focus: "Holding execute-ready runs until the queue clears or human approval resumes them.",
       posture: "Ready",
       load: "39%",
-      tone: "info",
+      tone: "neutral",
     },
   ] satisfies WorkerLane[],
   spotlight: {

@@ -1,15 +1,13 @@
 import type { ReactNode } from "react";
 
+import { AgentsPage } from "../pages/AgentsPage";
+import { ApprovalsPage } from "../pages/ApprovalsPage";
+import { FinOpsWorkflowPage } from "../pages/FinOpsWorkflowPage";
 import { MissionControlPage } from "../pages/MissionControlPage";
-import {
-  AgentsPage,
-  ApprovalsPage,
-  FinOpsWorkflowPage,
-  PoliciesPage,
-  ReplayAuditPage,
-  RunsTasksPage,
-  SettingsDemoControlsPage,
-} from "../pages/RoutePlaceholders";
+import { PoliciesPage } from "../pages/PoliciesPage";
+import { ReplayAuditPage } from "../pages/ReplayAuditPage";
+import { RunsTasksPage } from "../pages/RunsTasksPage";
+import { SettingsDemoControlsPage } from "../pages/SettingsDemoControlsPage";
 
 type NavItem = {
   label: string;
@@ -34,19 +32,19 @@ export const navigationSections: NavSection[] = [
       {
         label: "Mission Control",
         shortLabel: "Overview",
-        description: "Operational overview for supervised AI worker workflows.",
+        description: "Operational summary for AI worker activity and system posture.",
         path: "/",
       },
       {
         label: "Agents",
         shortLabel: "Agents",
-        description: "Worker roles, assignments, and runtime posture.",
+        description: "Worker roles, current assignments, and runtime posture.",
         path: "/agents",
       },
       {
         label: "Runs",
         shortLabel: "Runs",
-        description: "Workflow lanes, handoffs, and execution visibility.",
+        description: "Workflow execution lanes, tasks, and handoff visibility.",
         path: "/runs",
       },
     ],
@@ -57,19 +55,19 @@ export const navigationSections: NavSection[] = [
       {
         label: "Approvals",
         shortLabel: "Approvals",
-        description: "Human gates, escalations, and intervention queues.",
+        description: "Pending interventions, authorizations, and escalations.",
         path: "/approvals",
       },
       {
         label: "Replay & Audit",
         shortLabel: "Replay",
-        description: "Receipts, evidence, and inspectable execution history.",
+        description: "Execution history, evidence trails, and receipts.",
         path: "/replay",
       },
       {
         label: "Policies",
         shortLabel: "Policies",
-        description: "Rule posture, guardrails, and control thresholds.",
+        description: "Rules, guardrails, and risk posture configuration surfaces.",
         path: "/policies",
       },
     ],
@@ -80,13 +78,13 @@ export const navigationSections: NavSection[] = [
       {
         label: "FinOps Workflow",
         shortLabel: "FinOps",
-        description: "High-stakes back-office showcase for the first domain.",
+        description: "High-stakes back-office workflow surface for the first domain.",
         path: "/finops",
       },
       {
         label: "Settings & Demo Controls",
         shortLabel: "Settings",
-        description: "Scenario launchers, environment posture, and demo toggles.",
+        description: "Environment posture, scenarios, and demo-safe controls.",
         path: "/settings",
       },
     ],

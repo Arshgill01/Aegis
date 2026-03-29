@@ -1,69 +1,55 @@
-import { MetricCard } from "../../components/ui/MetricCard";
-import { Panel } from "../../components/ui/Panel";
-import { StatusBadge, type StatusTone } from "../../components/ui/StatusBadge";
+import { SurfaceCard } from "../../components/shell/SurfaceCard";
 import type {
   ActivityEvent,
   ApprovalPreview,
   FlaggedItem,
+  MissionTone,
   RunLane,
   ScenarioSpotlight,
   SummaryCardItem,
   WorkerLane,
 } from "./missionControlData";
 
-const riskToneMap: Record<RunLane["risk"], StatusTone> = {
-  Low: "success",
-  Medium: "warning",
-  High: "danger",
+const riskToneMap: Record<RunLane["risk"], MissionTone> = {
+  Low: "positive",
+  Medium: "attention",
+  High: "attention",
 };
 
-const modeToneMap: Record<RunLane["mode"], StatusTone> = {
-  Shadow: "info",
-  "Execute-ready": "success",
+const modeToneMap: Record<RunLane["mode"], MissionTone> = {
+  Shadow: "neutral",
+  "Execute-ready": "positive",
 };
 
-export function SummaryStrip({ items }: { items: SummaryCardItem[] }) {
-  return (
-    <section className="metric-grid" aria-label="Overview metrics">
-      {items.map((item) => (
-        <MetricCard
-          key={item.label}
-          badge={item.badge}
-          detail={item.detail}
-          label={item.label}
-          tone={item.tone}
-          value={item.value}
-        />
-      ))}
-    </section>
-  );
+function chipClass(tone: MissionTone) {
+  return `mission-chip mission-chip--${tone}`;
 }
 
-export function ActiveRunsPanel({ runs }: { runs: RunLane[] }) {
+export function ActiveRunsCard({ runs }: { runs: RunLane[] }) {
   return (
-    <Panel
+    <SurfaceCard
+      eyebrow="Run supervision"
       title="Active workflow runs"
-      description="Runs are ordered to show where supervision, escalation, and controlled execution are currently concentrated."
-      actions={<StatusBadge tone="info">{runs.length} tracked</StatusBadge>}
+      footer="Runs are ordered to keep current intervention pressure visible at a glance."
     >
-      <div className="run-list">
+      <div className="mission-list mission-list--runs">
         {runs.map((run) => (
-          <article className="run-card" key={run.id}>
-            <div className="run-card__header">
+          <article className="mission-run" key={run.id}>
+            <div className="mission-run__header">
               <div>
-                <div className="run-card__identity">
+                <div className="mission-run__identity">
                   <strong>{run.id}</strong>
                   <span>{run.workflow}</span>
                 </div>
                 <p>{run.company}</p>
               </div>
-              <div className="run-card__badges">
-                <StatusBadge tone={modeToneMap[run.mode]}>{run.mode}</StatusBadge>
-                <StatusBadge tone={riskToneMap[run.risk]}>{run.risk} risk</StatusBadge>
+              <div className="mission-chip-row">
+                <span className={chipClass(modeToneMap[run.mode])}>{run.mode}</span>
+                <span className={chipClass(riskToneMap[run.risk])}>{run.risk} risk</span>
               </div>
             </div>
 
-            <div className="run-card__grid">
+            <div className="mission-run__grid">
               <div>
                 <span>Current stage</span>
                 <strong>{run.stage}</strong>
@@ -84,68 +70,69 @@ export function ActiveRunsPanel({ runs }: { runs: RunLane[] }) {
           </article>
         ))}
       </div>
-    </Panel>
+    </SurfaceCard>
   );
 }
 
-export function ApprovalsPreviewPanel({ approvals }: { approvals: ApprovalPreview[] }) {
+export function ApprovalsCard({ approvals }: { approvals: ApprovalPreview[] }) {
   return (
-    <Panel
+    <SurfaceCard
+      eyebrow="Approvals"
       title="Pending approvals preview"
-      description="Human gates surface with enough context to understand the action, the risk, and what resumes next."
-      actions={<StatusBadge tone="warning">{approvals.length} queued</StatusBadge>}
+      footer="Each approval card names the action, why it paused, and who resumes it next."
     >
-      <div className="approval-list">
+      <div className="mission-list">
         {approvals.map((approval) => (
-          <article className="approval-card" key={approval.id}>
-            <div className="approval-card__header">
+          <article className="mission-approval" key={approval.id}>
+            <div className="mission-approval__header">
               <div>
                 <strong>{approval.title}</strong>
                 <p>{approval.runId}</p>
               </div>
-              <StatusBadge tone="warning">{approval.dueBy}</StatusBadge>
+              <span className={chipClass("attention")}>{approval.dueBy}</span>
             </div>
-            <p className="approval-card__reason">{approval.reason}</p>
-            <div className="approval-card__footer">
+            <p className="mission-approval__reason">{approval.reason}</p>
+            <div className="mission-approval__footer">
               <span>{approval.owner}</span>
-              <StatusBadge tone={approval.tone}>{approval.riskLabel}</StatusBadge>
+              <span className={chipClass(approval.tone)}>{approval.riskLabel}</span>
             </div>
           </article>
         ))}
       </div>
-    </Panel>
+    </SurfaceCard>
   );
 }
 
-export function ActivityPanel({ entries }: { entries: ActivityEvent[] }) {
+export function ActivityCard({ entries }: { entries: ActivityEvent[] }) {
   return (
-    <Panel
+    <SurfaceCard
+      eyebrow="System activity"
       title="Recent system activity"
-      description="The activity rail emphasizes explainable system actions instead of generic dashboard events."
+      footer="System activity stays operational and explainable instead of collapsing into generic audit noise."
     >
-      <div className="activity-feed">
+      <div className="mission-activity">
         {entries.map((entry) => (
-          <article className="activity-row" key={`${entry.time}-${entry.title}`}>
-            <div className={`activity-row__dot activity-row__dot--${entry.tone}`} />
-            <div className="activity-row__body">
-              <div className="activity-row__meta">
+          <article className="mission-activity__row" key={`${entry.time}-${entry.title}`}>
+            <div className={`mission-activity__dot mission-activity__dot--${entry.tone}`} />
+            <div className="mission-activity__body">
+              <div className="mission-activity__meta">
                 <strong>{entry.title}</strong>
                 <span>{entry.time}</span>
               </div>
               <p>{entry.detail}</p>
-              <div className="activity-row__footer">
+              <div className="mission-activity__footer">
                 <span>{entry.actor}</span>
-                <StatusBadge tone={entry.tone}>{entry.category}</StatusBadge>
+                <span className={chipClass(entry.tone)}>{entry.category}</span>
               </div>
             </div>
           </article>
         ))}
       </div>
-    </Panel>
+    </SurfaceCard>
   );
 }
 
-export function RiskPosturePanel({
+export function RiskPostureCard({
   flaggedItems,
   postureSignals,
 }: {
@@ -153,88 +140,89 @@ export function RiskPosturePanel({
   postureSignals: SummaryCardItem[];
 }) {
   return (
-    <Panel
-      title="Risk posture"
-      description="Fast posture indicators and specific flagged items keep risk legible without pretending the policy engine exists yet."
+    <SurfaceCard
+      eyebrow="Risk posture"
+      title="Flagged items and control posture"
+      footer="Risk stays concrete: visible affected run, surfaced reason, and the next human or worker step."
     >
-      <div className="posture-grid">
+      <div className="mission-posture">
         {postureSignals.map((signal) => (
-          <div className="posture-card" key={signal.label}>
+          <div className="mission-posture__item" key={signal.label}>
             <span>{signal.label}</span>
             <strong>{signal.value}</strong>
-            <StatusBadge tone={signal.tone}>{signal.badge}</StatusBadge>
+            <em>{signal.badge}</em>
           </div>
         ))}
       </div>
 
-      <div className="flagged-list">
+      <div className="mission-list">
         {flaggedItems.map((item) => (
-          <article className="flagged-card" key={item.title}>
-            <div className="flagged-card__header">
+          <article className="mission-flag" key={item.title}>
+            <div className="mission-flag__header">
               <strong>{item.title}</strong>
-              <StatusBadge tone={item.tone}>{item.severity}</StatusBadge>
+              <span className={chipClass(item.tone)}>{item.severity}</span>
             </div>
             <p>{item.summary}</p>
-            <div className="flagged-card__footer">
+            <div className="mission-flag__footer">
               <span>{item.runId}</span>
               <strong>{item.nextAction}</strong>
             </div>
           </article>
         ))}
       </div>
-    </Panel>
+    </SurfaceCard>
   );
 }
 
-export function WorkerActivityPanel({ workers }: { workers: WorkerLane[] }) {
+export function WorkerActivityCard({ workers }: { workers: WorkerLane[] }) {
   return (
-    <Panel
+    <SurfaceCard
+      eyebrow="Worker lanes"
       title="Worker activity"
-      description="Each worker lane is framed by role, current load, and what the system expects from it next."
-      actions={<StatusBadge tone="success">{workers.length} active lanes</StatusBadge>}
+      footer="Workers stay distinct by role, queue pressure, and current focus instead of reading as identical labels."
     >
-      <div className="worker-grid">
+      <div className="mission-workers">
         {workers.map((worker) => (
-          <article className="worker-card" key={worker.name}>
-            <div className="worker-card__header">
+          <article className="mission-worker" key={worker.name}>
+            <div className="mission-worker__header">
               <div>
                 <strong>{worker.name}</strong>
                 <p>{worker.role}</p>
               </div>
-              <StatusBadge tone={worker.tone}>{worker.posture}</StatusBadge>
+              <span className={chipClass(worker.tone)}>{worker.posture}</span>
             </div>
-            <div className="worker-card__meta">
+            <div className="mission-worker__meta">
               <span>Load {worker.load}</span>
               <span>{worker.queue}</span>
             </div>
-            <p className="worker-card__focus">{worker.focus}</p>
+            <p className="mission-worker__focus">{worker.focus}</p>
           </article>
         ))}
       </div>
-    </Panel>
+    </SurfaceCard>
   );
 }
 
-export function ScenarioSpotlightPanel({ spotlight }: { spotlight: ScenarioSpotlight }) {
+export function ScenarioSpotlightCard({ spotlight }: { spotlight: ScenarioSpotlight }) {
   return (
-    <Panel
-      title="Scenario spotlight"
-      description="A deterministic scenario anchor keeps the flagship screen tied to the product story without forcing later-wave mechanics."
-      actions={<StatusBadge tone="info">{spotlight.phase}</StatusBadge>}
+    <SurfaceCard
+      eyebrow="Scenario spotlight"
+      title="Deterministic demo anchor"
+      footer="The Overview stays demo-ready without claiming deeper orchestration or approval mechanics than Wave 1 owns."
     >
-      <div className="spotlight-card">
-        <div className="spotlight-card__eyebrow">
+      <div className="mission-spotlight">
+        <div className="mission-spotlight__header">
           <span>Current showcase focus</span>
-          <StatusBadge tone="neutral">Demo-safe</StatusBadge>
+          <span className={chipClass("neutral")}>{spotlight.phase}</span>
         </div>
         <h3>{spotlight.title}</h3>
         <p>{spotlight.narrative}</p>
-        <ul className="spotlight-list">
+        <ul className="mission-spotlight__list">
           {spotlight.watchpoints.map((watchpoint) => (
             <li key={watchpoint}>{watchpoint}</li>
           ))}
         </ul>
       </div>
-    </Panel>
+    </SurfaceCard>
   );
 }

@@ -1,4 +1,5 @@
 import type {
+  ActionDecisionPayload,
   AuditActor,
   AuditEvent,
   AuditEventKind,
@@ -17,6 +18,7 @@ import type {
   WorkflowScenario,
 } from "../contracts";
 import { seededScenarios, seededWorkerRegistry } from "../demo-fixtures";
+import { buildScenarioDecisionOutputs } from "./decisioning";
 import {
   assignWorkerToStep,
   attachArtifacts,
@@ -39,6 +41,8 @@ export type SimulatedWorkflowRun = {
   events: AuditEvent[];
   replayFrames: ReplayFrame[];
   receipt: ExecutionReceipt;
+  stepDecisions: ActionDecisionPayload[];
+  finalDecision: ActionDecisionPayload;
 };
 
 function uniq(values: string[]) {
@@ -495,6 +499,7 @@ export function simulateWorkflowRun(scenario: WorkflowScenario): SimulatedWorkfl
   };
   const replayFrames = createReplayFrames(finalState.events);
   const receipt = createExecutionReceipt(run, scenario, finalState.events);
+  const decisionOutputs = buildScenarioDecisionOutputs(scenario);
 
   return {
     scenario,
@@ -502,6 +507,8 @@ export function simulateWorkflowRun(scenario: WorkflowScenario): SimulatedWorkfl
     events: finalState.events,
     replayFrames,
     receipt,
+    stepDecisions: decisionOutputs.stepDecisions,
+    finalDecision: decisionOutputs.finalDecision,
   };
 }
 

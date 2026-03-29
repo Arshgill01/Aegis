@@ -18,6 +18,10 @@ export type PolicyRule = {
   description: string;
   outcome: PolicyOutcome;
   scope: string;
+  severity?: RiskLevel;
+  rationale?: string;
+  appliesToStepKeys?: string[];
+  evidenceArtifactIds?: string[];
 };
 
 export type RiskAssessment = {

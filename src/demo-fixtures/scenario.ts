@@ -41,6 +41,9 @@ const policyRules = {
     description: "Trusted vendors with unchanged remittance details can remain in the low-risk path.",
     outcome: "allow",
     scope: "vendor_validation",
+    severity: "low",
+    rationale: "Trusted profile, stable remittance details, and matched commercial records allow supervised progression.",
+    appliesToStepKeys: ["risk-review", "controlled-execution"],
   } satisfies PolicyRule,
   amountVariance: {
     id: "POL-AMOUNT-VARIANCE",
@@ -48,6 +51,9 @@ const policyRules = {
     description: "Invoice totals above tolerance must hold before any posting or payment action proceeds.",
     outcome: "escalate",
     scope: "invoice_match",
+    severity: "high",
+    rationale: "PO variance exceeds tolerance, so payment-sensitive actions require named review before execution.",
+    appliesToStepKeys: ["risk-review", "approval-coordination"],
   } satisfies PolicyRule,
   bankDrift: {
     id: "POL-BANK-DRIFT",
@@ -55,6 +61,9 @@ const policyRules = {
     description: "Mid-cycle remittance changes remain blocked until separate evidence resolves the drift.",
     outcome: "block",
     scope: "vendor_validation",
+    severity: "high",
+    rationale: "Recent remittance drift on an active vendor profile is a stop condition until independent verification clears it.",
+    appliesToStepKeys: ["vendor-review", "risk-hold"],
   } satisfies PolicyRule,
   receivingEvidence: {
     id: "POL-RECEIVING-EVIDENCE",
@@ -62,6 +71,9 @@ const policyRules = {
     description: "Accrual exceptions cannot complete without receiving proof or a named override.",
     outcome: "block",
     scope: "exception_triage",
+    severity: "high",
+    rationale: "Missing receiving proof prevents exception closeout and blocks downstream action release.",
+    appliesToStepKeys: ["document-review", "exception-resolution"],
   } satisfies PolicyRule,
 };
 

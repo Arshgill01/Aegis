@@ -1,71 +1,85 @@
-import type { AgentWorker } from "../contracts";
+import {
+  workerIds,
+  workerOperationalSummaryDefaults,
+  workerRegistry,
+} from "../contracts";
+import type {
+  AgentWorker,
+  WorkerOperationalSummary,
+} from "../contracts";
 
-export const seededWorkers: AgentWorker[] = [
-  {
-    id: "intake-worker",
-    name: "Intake Worker",
-    role: "intake",
-    lane: "Intake lane",
-    description: "Normalizes inbound artifacts and assembles the initial supervised run context.",
-    defaultExecutionMode: "shadow",
-    capabilities: ["document capture", "artifact normalization", "case assembly"],
+export const seededWorkerOperationalSummaries: Record<AgentWorker["id"], WorkerOperationalSummary> = {
+  "worker-intake": {
+    posture: "stable",
+    queueDepth: 6,
+    activeRunCount: 4,
+    loadPercent: 74,
+    headline: "Inbound AP packets are flowing through normalized intake without backlog risk.",
   },
-  {
-    id: "document-review-worker",
-    name: "Document Review Worker",
-    role: "document_review",
-    lane: "Review lane",
-    description: "Checks document completeness, extracts structured fields, and keeps evidence attached.",
-    defaultExecutionMode: "shadow",
-    capabilities: ["invoice extraction", "document validation", "evidence bundling"],
+  "worker-document-review": {
+    posture: "stable",
+    queueDepth: 4,
+    activeRunCount: 3,
+    loadPercent: 68,
+    headline: "Document validation remains steady with complete evidence linkage in most runs.",
   },
-  {
-    id: "vendor-review-worker",
-    name: "Vendor Review Worker",
-    role: "vendor_review",
-    lane: "Vendor lane",
-    description: "Validates supplier posture, profile changes, and remittance history before release steps continue.",
-    defaultExecutionMode: "shadow",
-    capabilities: ["vendor profile review", "bank detail comparison", "supplier evidence review"],
+  "worker-vendor-review": {
+    posture: "watching",
+    queueDepth: 3,
+    activeRunCount: 2,
+    loadPercent: 66,
+    headline: "Vendor remittance checks are watching two change-sensitive packets.",
   },
-  {
-    id: "risk-worker",
-    name: "Risk Worker",
-    role: "risk",
-    lane: "Control lane",
-    description: "Flags mismatches, tolerance breaches, and exception paths that need supervised handling.",
-    defaultExecutionMode: "shadow",
-    capabilities: ["risk review", "mismatch analysis", "exception triage"],
+  "worker-po-match": {
+    posture: "watching",
+    queueDepth: 3,
+    activeRunCount: 2,
+    loadPercent: 71,
+    headline: "PO variance lane holds a small set of mismatch-heavy review packets.",
   },
-  {
-    id: "approval-coordinator",
-    name: "Approval Coordinator",
-    role: "approval",
-    lane: "Human gate lane",
-    description: "Packages risky actions into named human gates and holds the run in a visible waiting state.",
-    defaultExecutionMode: "shadow",
-    capabilities: ["approval packaging", "escalation routing", "decision tracking"],
+  "worker-policy-review": {
+    posture: "watching",
+    queueDepth: 2,
+    activeRunCount: 2,
+    loadPercent: 63,
+    headline: "Policy review is evaluating exception paths before they reach human gates.",
   },
-  {
-    id: "execution-worker",
-    name: "Execution Worker",
-    role: "execution",
-    lane: "Execution lane",
-    description: "Owns controlled live actions after supervised review has cleared the path.",
-    defaultExecutionMode: "execute",
-    capabilities: ["controlled posting", "payment release staging", "completion capture"],
+  "worker-risk": {
+    posture: "escalated",
+    queueDepth: 4,
+    activeRunCount: 3,
+    loadPercent: 86,
+    headline: "Risk lane is elevated due to active mismatch and remittance-drift exceptions.",
   },
-  {
-    id: "audit-narrator",
-    name: "Audit Narrator",
-    role: "audit",
-    lane: "Evidence lane",
-    description: "Packages the simulated run history into replay-friendly receipts and narrative summaries.",
-    defaultExecutionMode: "shadow",
-    capabilities: ["event narration", "receipt summary", "replay framing"],
+  "worker-approval-coordinator": {
+    posture: "coordinating",
+    queueDepth: 3,
+    activeRunCount: 2,
+    loadPercent: 58,
+    headline: "Named approval gates are being coordinated with clear resume paths.",
   },
-];
+  "worker-execution": {
+    posture: "ready",
+    queueDepth: 1,
+    activeRunCount: 1,
+    loadPercent: 41,
+    headline: "Execute lane remains ready with one controlled posting package staged.",
+  },
+  "worker-audit-narrator": {
+    posture: "narrating",
+    queueDepth: 2,
+    activeRunCount: 2,
+    loadPercent: 52,
+    headline: "Audit narration is drafting replay summaries for active exception runs.",
+  },
+};
+
+export const seededWorkers: AgentWorker[] = workerIds.map((workerId) => ({
+  ...workerRegistry[workerId],
+  operationalSummary:
+    seededWorkerOperationalSummaries[workerId] ?? workerOperationalSummaryDefaults[workerId],
+}));
 
 export const seededWorkerRegistry = Object.fromEntries(
   seededWorkers.map((worker) => [worker.id, worker]),
-) as Record<string, AgentWorker>;
+) as Record<AgentWorker["id"], AgentWorker>;

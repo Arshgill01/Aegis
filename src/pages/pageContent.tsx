@@ -2,7 +2,7 @@ import { PageShell } from "../components/shell/PageShell";
 import { StackList } from "../components/shell/StackList";
 import { SurfaceCard } from "../components/shell/SurfaceCard";
 
-type PageContentConfig = {
+export type PageContentConfig = {
   eyebrow: string;
   title: string;
   description: string;

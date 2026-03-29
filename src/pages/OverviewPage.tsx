@@ -14,7 +14,6 @@ import {
   SectionHeader,
   SectionShell,
   StatusBadge,
-  SplitLayout,
   SummaryStatCard,
   SurfaceCard,
   WorkerBadge,
@@ -25,15 +24,16 @@ import {
   decisionInfo,
   overviewHighlights,
   overviewStats,
+  routeScaffoldMetrics,
 } from "../data/dashboard";
 
 export function OverviewPage() {
   return (
-    <PageShell>
+    <PageShell className="overview-page">
       <PageHeader
         eyebrow="Wave 1 Foundation"
         title="Mission Control"
-        description="Aegis starts with a stable command surface: visible routes, premium panels, and reusable layout primitives that downstream workflow branches can populate without fragmenting the product."
+        description="A stable command surface for visible AI operations, with denser shell framing, sharper panel rhythm, and reusable primitives that keep later workflow slices coherent."
         actions={
           <div className="cluster">
             <ModeBadge mode="shadow" />
@@ -49,127 +49,81 @@ export function OverviewPage() {
         ))}
       </section>
 
-      <SectionShell>
+      <SectionShell className="overview-cluster overview-board">
         <SectionHeader
-          title="Operational posture"
-          caption="Wave 1 emphasizes composable shell quality before deeper runtime logic arrives."
+          title="Operational lane"
+          caption="Activity, decision framing, and trust states are grouped into one command board."
         />
-        <SplitLayout
-          primary={
-            <Panel
-              title="Command surface baseline"
-              description="These shared surfaces establish the visual language for the rest of the control tower."
-            >
-              <div className="stack">
-                {overviewHighlights.map(([label, value]) => (
-                  <MetricRow key={label} label={label} value={value} />
-                ))}
-              </div>
-            </Panel>
-          }
-          secondary={
-            <Panel
-              inset
-              title="Why this matters"
-              description="Later waves should inherit this shell and spend time on trust, approval, risk, and replay instead of rebuilding cards."
-            >
-              <div className="stack">
-                <p className="surface-copy">
-                  The mission-control product feel has to be present from the
-                  first render. This pass hardens spacing, shell structure, and
-                  reusable surfaces so future pages can stay visually coherent
-                  under real workflow content.
-                </p>
-                <div className="badge-stack">
-                  <RiskBadge risk="medium" />
-                  <ApprovalBadge state="pending" />
-                  <WorkerBadge worker="Policy Worker" />
-                </div>
-              </div>
-            </Panel>
-          }
-        />
-      </SectionShell>
+        <div className="overview-command-grid">
+          <Panel
+            className="overview-command-card overview-command-card--activity"
+            title="Recent workflow movement"
+            description="Shadow traffic, gated decisions, and replay-safe outcomes stay visible in one compact stream."
+          >
+            <div className="activity-list">
+              {activityFeed.map((item) => (
+                <ActivityRow
+                  key={item.title}
+                  title={item.title}
+                  description={item.description}
+                  meta={item.meta}
+                  tone={item.tone}
+                  badge={<ModeBadge mode="shadow" />}
+                />
+              ))}
+            </div>
+          </Panel>
 
-      <SectionShell>
-        <SectionHeader
-          title="Route scaffolds"
-          caption="Every Wave 1 route already resolves into the same shell and surface rhythm."
-        />
-        <div className="surface-grid">
-          <SurfaceCard
-            title="Primary pages"
-            description="Overview, agents, runs, approvals, replay, policies, FinOps, and settings routes all exist behind a shared shell."
+          <Panel
+            inset
+            className="overview-command-card"
+            title="Command surface baseline"
+            description="Shared shell posture already visible across every primary route."
           >
-            <p className="surface-copy">
-              The route tree is intentionally lean: page branches can focus on
-              domain content, not layout scaffolding.
-            </p>
+            <div className="stack">
+              {overviewHighlights.map(([label, value]) => (
+                <MetricRow key={label} label={label} value={value} />
+              ))}
+            </div>
+          </Panel>
+
+          <SurfaceCard
+            className="overview-command-card"
+            title="Decision framing"
+            description="Why the shell is built for clarity before deeper runtime logic arrives."
+          >
+            <InfoList items={[...decisionInfo]} />
           </SurfaceCard>
+
           <SurfaceCard
-            title="Ready for composition"
-            description="Panel and section primitives are tuned for dense but readable operational UI."
+            className="overview-command-card overview-state-card"
+            title="Trust language"
+            description="Core states should read instantly without leaning on loud color or oversized visuals."
           >
-            <p className="surface-copy">
-              Summary cards, inset surfaces, split layouts, and metric rows already
-              share the same radius, padding, depth, and typography posture.
-            </p>
+            <div className="badge-stack">
+              <StatusBadge status="completed" />
+              <StatusBadge status="blocked" />
+              <ApprovalBadge state="approved" />
+              <ApprovalBadge state="rejected" />
+              <RiskBadge risk="low" />
+              <RiskBadge risk="high" />
+              <ModeBadge mode="executed" />
+              <WorkerBadge worker="Execution Worker" />
+            </div>
           </SurfaceCard>
         </div>
       </SectionShell>
 
-      <SectionShell>
+      <SectionShell className="overview-cluster">
         <SectionHeader
-          title="Visible control surfaces"
-          caption="Semantic primitives already express the core trust states the product depends on."
+          title="Platform readiness"
+          caption="Routes, evidence surfaces, and scaffold signals stay aligned under one shared system."
         />
-        <SplitLayout
-          primary={
-            <Panel
-              title="Recent activity"
-              description="Compact timeline rows for run feeds, replay previews, and workflow events."
-            >
-              <div className="activity-list">
-                {activityFeed.map((item) => (
-                  <ActivityRow
-                    key={item.title}
-                    title={item.title}
-                    description={item.description}
-                    meta={item.meta}
-                    tone={item.tone}
-                    badge={<ModeBadge mode="shadow" />}
-                  />
-                ))}
-              </div>
-            </Panel>
-          }
-          secondary={
-            <div className="stack">
-              <SurfaceCard
-                title="Decision framing"
-                description="Clear metadata blocks give later pages a stable detail presentation pattern."
-              >
-                <InfoList items={[...decisionInfo]} />
-              </SurfaceCard>
-              <CalloutBlock
-                tone="warning"
-                title="Risk, approval, and execution states are intentionally explicit"
-                description="Downstream branches should use these shared badges and callouts rather than inventing one-off color logic inside pages."
-              />
-            </div>
-          }
-        />
-      </SectionShell>
-
-      <SectionShell>
-        <SectionHeader
-          title="Artifact-ready rows"
-          caption="Shared record rows are ready for receipts, documents, or evidence panels."
-        />
-        <div className="surface-grid">
+        <div className="overview-support-grid">
           <SurfaceCard
-            title="Evidence surfaces"
-            description="These rows are compact enough for high-signal side panels and detail pages."
+            className="overview-support-grid__evidence"
+            title="Artifact-ready evidence"
+            description="Record rows are compact enough for receipts, documents, and approval packets."
           >
             <div className="record-list">
               {artifacts.map((artifact) => (
@@ -183,21 +137,25 @@ export function OverviewPage() {
               ))}
             </div>
           </SurfaceCard>
-          <SurfaceCard
-            title="State contrast"
-            description="These pairings should read instantly across overview, approvals, replay, and workflow routes."
-          >
-            <div className="badge-stack">
-              <StatusBadge status="completed" />
-              <StatusBadge status="blocked" />
-              <ApprovalBadge state="approved" />
-              <ApprovalBadge state="rejected" />
-              <RiskBadge risk="low" />
-              <RiskBadge risk="high" />
-              <ModeBadge mode="executed" />
-              <WorkerBadge worker="Execution Worker" />
-            </div>
-          </SurfaceCard>
+
+          <div className="overview-support-grid__stack">
+            <SurfaceCard
+              title="Route scaffolds"
+              description="Every primary route resolves into the same shell, spacing rhythm, and card discipline."
+            >
+              <div className="stack">
+                {routeScaffoldMetrics.map(([label, value]) => (
+                  <MetricRow key={label} label={label} value={value} />
+                ))}
+              </div>
+            </SurfaceCard>
+
+            <CalloutBlock
+              tone="warning"
+              title="Risk, approval, and execution states stay explicit"
+              description="Future routes should reuse the shared badge and panel system instead of inventing local alert logic."
+            />
+          </div>
         </div>
       </SectionShell>
     </PageShell>

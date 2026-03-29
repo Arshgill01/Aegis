@@ -3,65 +3,65 @@ export const overviewStats = [
     eyebrow: "Live workload",
     label: "Runs visible in mission control",
     value: "12",
-    meta: "3 newly surfaced in the last 15 minutes",
+    meta: "3 new runs surfaced in the last 15 minutes",
     accent: "var(--signal-blue)",
   },
   {
     eyebrow: "Shadow traffic",
     label: "Workflows exercising policy gates",
     value: "68%",
-    meta: "Healthy baseline coverage across seeded scenarios",
+    meta: "Seeded scenarios are consistently hitting policy checks",
     accent: "var(--signal-cyan)",
   },
   {
     eyebrow: "Review load",
     label: "Decisions awaiting human confirmation",
     value: "04",
-    meta: "Approval queue intentionally separated from low-risk flow",
+    meta: "Only exception paths are waiting on human review",
     accent: "var(--signal-amber)",
   },
   {
     eyebrow: "Operational health",
     label: "Visible worker surfaces online",
     value: "99.2%",
-    meta: "Presentation-safe placeholder telemetry for Wave 1",
+    meta: "Shell telemetry reserved for later runtime layers",
     accent: "var(--signal-green)",
   },
 ];
 
 export const overviewHighlights = [
-  ["Shell posture", "Mission-control layout with stable route hierarchy"],
+  ["Shell posture", "Mission-control framing with a stable route hierarchy"],
   ["Surface language", "Shared cards, panels, insets, and metric rhythm"],
-  ["Page readiness", "Every primary route can render coherently on day one"],
-  ["Downstream usage", "Future branches can swap in real data without restyling"],
+  ["Page readiness", "Every primary route already resolves coherently"],
+  ["Downstream usage", "Future branches can swap in data without restyling"],
 ] as const;
 
 export const routeScaffoldMetrics = [
-  ["Shared shell", "Ready"],
+  ["Shared shell", "Locked"],
   ["Placeholder states", "Aligned"],
   ["Primary nav", "Mapped"],
-  ["Surface density", "Balanced"],
+  ["Surface density", "Tuned"],
 ] as const;
 
 export const activityFeed = [
   {
     title: "Invoice intake worker opened batch 24-031",
     description:
-      "The shadow path resolved vendor candidates and generated an initial evidence bundle for review surfaces.",
+      "The shadow path resolved vendor candidates and assembled the first evidence bundle for review.",
     meta: "2 minutes ago",
     tone: "info",
   },
   {
     title: "Policy review paused a payment release",
     description:
-      "A seeded threshold mismatch kept the run in review instead of allowing execution to continue silently.",
+      "A seeded threshold mismatch kept the run in review instead of allowing silent execution.",
     meta: "7 minutes ago",
     tone: "warning",
   },
   {
     title: "Execution receipt preserved the run outcome",
     description:
-      "The product shell is already prepared for replay and audit details even before runtime logic lands.",
+      "Replay and audit surfaces are already ready to hold the final execution record.",
     meta: "13 minutes ago",
     tone: "success",
   },
@@ -75,7 +75,7 @@ export const artifacts = [
   },
   {
     title: "Purchase order summary",
-    description: "Structured comparison surface for PO, invoice, and execution intent.",
+    description: "Structured comparison for PO, invoice, and execution intent.",
     meta: "Artifact / comparison",
   },
   {
@@ -88,14 +88,14 @@ export const artifacts = [
 export const decisionInfo = [
   {
     label: "Primary objective",
-    value: "Establish a reusable mission-control UI layer for all Wave 1 routes.",
+    value: "Establish a reusable mission-control UI layer for every Wave 1 route.",
   },
   {
     label: "Visual posture",
-    value: "Dark operational shell with restrained depth, sharp typography, and semantic state accents.",
+    value: "Dark operational shell with restrained depth, sharper typography, and semantic state accents.",
   },
   {
     label: "Downstream contract",
-    value: "Future branches should compose from shared primitives rather than route-local card variants.",
+    value: "Future branches should compose from shared primitives instead of route-local card variants.",
   },
 ] as const;

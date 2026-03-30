@@ -1,12 +1,20 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
-import { getRuntimeState, subscribeRuntimeState } from "../../domain/runtimeStore";
 import {
+  getRuntimeState,
+  setSelectedApprovalId,
+  setSelectedRunId,
+  setSelectedScenarioId,
+  subscribeRuntimeState,
+} from "../../domain/runtimeStore";
+import {
+  buildApprovalDetailPageData,
   buildAgentsPageData,
   buildApprovalsPageContent,
   buildFinOpsWorkflowPageContent,
   buildMissionControlPageData,
   buildPoliciesPageData,
+  buildRunDetailPageData,
   buildRunsPageData,
   buildShellOrchestrationSummary,
 } from "./pageAdapters";
@@ -30,14 +38,50 @@ export function useAgentsPageData() {
   return buildAgentsPageData();
 }
 
-export function useRunsPageData() {
+export function useRunsPageData(preferredRunId?: string) {
   useRuntimeSubscription();
-  return buildRunsPageData();
+  return buildRunsPageData(preferredRunId);
+}
+
+export function useRunDetailPageData(runId?: string) {
+  useRuntimeSubscription();
+
+  const detail = runId ? buildRunDetailPageData(runId) : undefined;
+
+  useEffect(() => {
+    if (runId) {
+      setSelectedRunId(runId);
+    }
+  }, [runId]);
+
+  useEffect(() => {
+    if (detail?.scenario.id) {
+      setSelectedScenarioId(detail.scenario.id);
+    }
+  }, [detail?.scenario.id]);
+
+  return detail;
 }
 
 export function useApprovalsPageContent() {
   useRuntimeSubscription();
   return buildApprovalsPageContent();
+}
+
+export function useApprovalDetailPageData(approvalId?: string) {
+  useRuntimeSubscription();
+
+  useEffect(() => {
+    if (approvalId) {
+      setSelectedApprovalId(approvalId);
+    }
+  }, [approvalId]);
+
+  if (!approvalId) {
+    return undefined;
+  }
+
+  return buildApprovalDetailPageData(approvalId);
 }
 
 export function usePoliciesPageData() {

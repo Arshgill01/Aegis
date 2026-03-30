@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { SurfaceCard } from "../../components/shell/SurfaceCard";
 import type {
   ExecutionModePanel,
@@ -61,7 +63,11 @@ export function RunQueueCard({ runs }: { runs: RunQueueItem[] }) {
             <div className="run-orch__queue-header">
               <div>
                 <div className="run-orch__identity">
-                  <strong>{run.id}</strong>
+                  <strong>
+                    <Link className="entity-link" to={run.runHref}>
+                      {run.id}
+                    </Link>
+                  </strong>
                   <span>{run.workflow}</span>
                 </div>
                 <p>{run.accountName}</p>

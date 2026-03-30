@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { SurfaceCard } from "../../components/shell/SurfaceCard";
 import type {
   ActivityEvent,
@@ -39,7 +41,11 @@ export function ActiveRunsCard({ runs }: { runs: RunLane[] }) {
             <div className="mission-run__header">
               <div>
                 <div className="mission-run__identity">
-                  <strong>{run.id}</strong>
+                  <strong>
+                    <Link className="entity-link" to={run.runHref}>
+                      {run.id}
+                    </Link>
+                  </strong>
                   <span>{run.workflow}</span>
                 </div>
                 <p>{run.company}</p>
@@ -87,8 +93,16 @@ export function ApprovalsCard({ approvals }: { approvals: ApprovalPreview[] }) {
           <article className="mission-approval" key={approval.id}>
             <div className="mission-approval__header">
               <div>
-                <strong>{approval.title}</strong>
-                <p>{approval.runId}</p>
+                <strong>
+                  <Link className="entity-link" to={approval.approvalHref}>
+                    {approval.title}
+                  </Link>
+                </strong>
+                <p>
+                  <Link className="entity-link entity-link--subtle" to={approval.runHref}>
+                    {approval.runId}
+                  </Link>
+                </p>
               </div>
               <span className={chipClass("attention")}>{approval.dueBy}</span>
             </div>
@@ -170,7 +184,11 @@ export function RiskPostureCard({
             </div>
             <p>{item.summary}</p>
             <div className="mission-flag__footer">
-              <span>{item.runId}</span>
+              <span>
+                <Link className="entity-link entity-link--subtle" to={item.runHref}>
+                  {item.runId}
+                </Link>
+              </span>
               <span>{item.evidence}</span>
               <strong>{item.nextAction}</strong>
             </div>
@@ -183,7 +201,11 @@ export function RiskPostureCard({
           <article className="mission-policy__item" key={`${entry.runId}-${entry.posture}`}>
             <div className="mission-policy__header">
               <div>
-                <strong>{entry.runId}</strong>
+                <strong>
+                  <Link className="entity-link" to={entry.runHref}>
+                    {entry.runId}
+                  </Link>
+                </strong>
                 <p>{entry.workflow}</p>
               </div>
               <div className="mission-chip-row">

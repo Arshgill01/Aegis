@@ -1,7 +1,10 @@
+import { Link } from "react-router-dom";
+
 type StackListItem = {
   title: string;
   detail: string;
   tag?: string;
+  href?: string;
 };
 
 type StackListProps = {
@@ -14,7 +17,15 @@ export function StackList({ items }: StackListProps) {
       {items.map((item) => (
         <article key={item.title} className="stack-list__item" role="listitem">
           <div>
-            <strong>{item.title}</strong>
+            {item.href ? (
+              <strong>
+                <Link className="entity-link entity-link--title" to={item.href}>
+                  {item.title}
+                </Link>
+              </strong>
+            ) : (
+              <strong>{item.title}</strong>
+            )}
             <p>{item.detail}</p>
           </div>
           {item.tag ? <span className="stack-list__tag">{item.tag}</span> : null}

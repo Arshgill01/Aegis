@@ -56,6 +56,20 @@ function dedupeEvidence(references: DecisionEvidenceReference[]) {
   return [...uniqueById.values()];
 }
 
+function policyDecisionToSignalOutcome(
+  decision: WorkflowScenario["policyRules"][number]["decision"],
+): PolicySignalInput["outcome"] {
+  if (decision === "blocked") {
+    return "block";
+  }
+
+  if (decision === "requires_approval") {
+    return "escalate";
+  }
+
+  return "allow";
+}
+
 function policySignalsToFactors(signals: PolicySignalInput[]): DecisionRiskFactorInput[] {
   return signals.map((signal) => {
     const severity = signal.severity ?? policyOutcomeSeverityDefaults[signal.outcome];
@@ -325,10 +339,10 @@ function policySignalsForStep(
   return matchingRules.map((rule) => ({
     ruleId: rule.id,
     ruleName: rule.name,
-    outcome: rule.outcome,
+    outcome: policyDecisionToSignalOutcome(rule.decision),
     severity: rule.severity,
     summary: rule.description,
-    rationale: rule.rationale ?? rule.description,
+    rationale: rule.rationale ?? rule.reason.detail,
     evidence: (rule.evidenceArtifactIds ?? [])
       .map((artifactId) => scenario.artifacts.find((artifact) => artifact.id === artifactId))
       .filter((artifact): artifact is NonNullable<typeof artifact> => Boolean(artifact))
@@ -500,10 +514,10 @@ export function buildScenarioDecisionOutputs(scenario: WorkflowScenario): Scenar
     policies: scenario.policyRules.map((rule) => ({
       ruleId: rule.id,
       ruleName: rule.name,
-      outcome: rule.outcome,
+      outcome: policyDecisionToSignalOutcome(rule.decision),
       severity: rule.severity,
       summary: rule.description,
-      rationale: rule.rationale ?? rule.description,
+      rationale: rule.rationale ?? rule.reason.detail,
     })),
     permissions: finalPermissionSignals(scenario),
     contextualFactors,

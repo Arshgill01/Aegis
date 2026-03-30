@@ -16,7 +16,11 @@ import type { Artifact } from "./audit";
 
 export type PolicyOutcome = PolicyDecisionOutcome;
 
-export type PolicyRule = PolicyRuleDefinition;
+export type PolicyRule = PolicyRuleDefinition & {
+  rationale?: string;
+  appliesToStepKeys?: string[];
+  evidenceArtifactIds?: string[];
+};
 
 export type RiskAssessment = {
   id: string;

@@ -2,12 +2,11 @@ import type {
   ApprovalRequest,
   ControlReference,
   PlannedToolInvocation,
+  PolicyRule,
   WorkerId,
   WorkflowScenario,
 } from "../contracts";
-import {
-  policyRuleCatalogById,
-} from "../contracts";
+import { policyRuleCatalogById } from "../contracts";
 import { seededWorkerRegistry, seededWorkers } from "./state";
 
 function pickWorkers(...ids: WorkerId[]) {
@@ -37,11 +36,23 @@ function approvalControl(request: ApprovalRequest): ControlReference {
 }
 
 const policyRules = {
-  trustedVendor: policyRuleCatalogById["POL-VENDOR-TRUSTED-MATCH"],
-  invoicePoMismatch: policyRuleCatalogById["POL-INVOICE-PO-MISMATCH"],
-  bankDetailRecentChange: policyRuleCatalogById["POL-BANK-DETAIL-RECENT-CHANGE"],
-  missingDocumentation: policyRuleCatalogById["POL-MISSING-DOCUMENTATION"],
-};
+  trustedVendor: {
+    ...policyRuleCatalogById["POL-VENDOR-TRUSTED-MATCH"],
+    appliesToStepKeys: ["risk-review", "controlled-execution"],
+  },
+  invoicePoMismatch: {
+    ...policyRuleCatalogById["POL-INVOICE-PO-MISMATCH"],
+    appliesToStepKeys: ["risk-review", "approval-coordination"],
+  },
+  bankDetailRecentChange: {
+    ...policyRuleCatalogById["POL-BANK-DETAIL-RECENT-CHANGE"],
+    appliesToStepKeys: ["vendor-review", "risk-hold"],
+  },
+  missingDocumentation: {
+    ...policyRuleCatalogById["POL-MISSING-DOCUMENTATION"],
+    appliesToStepKeys: ["document-review", "exception-resolution"],
+  },
+} satisfies Record<string, PolicyRule>;
 
 const northwindApproval: ApprovalRequest = {
   id: "APR-203",

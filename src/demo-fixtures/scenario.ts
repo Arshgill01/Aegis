@@ -2,9 +2,11 @@ import type {
   ApprovalRequest,
   ControlReference,
   PlannedToolInvocation,
-  PolicyRule,
   WorkerId,
   WorkflowScenario,
+} from "../contracts";
+import {
+  policyRuleCatalogById,
 } from "../contracts";
 import { seededWorkerRegistry, seededWorkers } from "./state";
 
@@ -35,34 +37,10 @@ function approvalControl(request: ApprovalRequest): ControlReference {
 }
 
 const policyRules = {
-  trustedVendor: {
-    id: "POL-TRUSTED-VENDOR",
-    name: "Trusted vendor match",
-    description: "Trusted vendors with unchanged remittance details can remain in the low-risk path.",
-    outcome: "allow",
-    scope: "vendor_validation",
-  } satisfies PolicyRule,
-  amountVariance: {
-    id: "POL-AMOUNT-VARIANCE",
-    name: "Invoice to PO variance threshold",
-    description: "Invoice totals above tolerance must hold before any posting or payment action proceeds.",
-    outcome: "escalate",
-    scope: "invoice_match",
-  } satisfies PolicyRule,
-  bankDrift: {
-    id: "POL-BANK-DRIFT",
-    name: "Vendor bank change hold",
-    description: "Mid-cycle remittance changes remain blocked until separate evidence resolves the drift.",
-    outcome: "block",
-    scope: "vendor_validation",
-  } satisfies PolicyRule,
-  receivingEvidence: {
-    id: "POL-RECEIVING-EVIDENCE",
-    name: "Receiving evidence required",
-    description: "Accrual exceptions cannot complete without receiving proof or a named override.",
-    outcome: "block",
-    scope: "exception_triage",
-  } satisfies PolicyRule,
+  trustedVendor: policyRuleCatalogById["POL-VENDOR-TRUSTED-MATCH"],
+  invoicePoMismatch: policyRuleCatalogById["POL-INVOICE-PO-MISMATCH"],
+  bankDetailRecentChange: policyRuleCatalogById["POL-BANK-DETAIL-RECENT-CHANGE"],
+  missingDocumentation: policyRuleCatalogById["POL-MISSING-DOCUMENTATION"],
 };
 
 const northwindApproval: ApprovalRequest = {
@@ -275,7 +253,7 @@ export const seededScenarios: WorkflowScenario[] = [
       summary: "Invoice total exceeds the matched PO threshold, so payment release must stay halted pending review.",
       factors: ["invoice exceeds PO by 7.8%", "payment release is high-stakes", "mismatch evidence was retained"],
     },
-    policyRules: [policyRules.amountVariance],
+    policyRules: [policyRules.invoicePoMismatch],
     approvalRequests: [northwindApproval],
     approvalDecisions: [],
     artifacts: [
@@ -426,7 +404,7 @@ export const seededScenarios: WorkflowScenario[] = [
         title: "Risk Worker halted the release path",
         detail: "The worker refused execution and packaged the mismatch evidence for human review.",
         outcomeSummary: "Variance packaged into a supervised hold.",
-        controlRefs: [controlRef("policy", "POL-AMOUNT-VARIANCE", "Invoice to PO variance threshold", "linked")],
+        controlRefs: [controlRef("policy", policyRules.invoicePoMismatch.id, policyRules.invoicePoMismatch.name, "linked")],
       },
       { kind: "handoff", atMinute: 15, stepId: "STEP-NORTHWIND-APPROVAL", nextWorkerId: "worker-approval-coordinator", title: "Run handed to Approval Coordinator", detail: "The risky release moved into the human gate lane." },
       {
@@ -482,7 +460,7 @@ export const seededScenarios: WorkflowScenario[] = [
       summary: "Vendor remittance details changed before the prior billing cycle settled, so the run remains blocked.",
       factors: ["bank details changed mid-cycle", "historic remittance profile no longer matches", "evidence remains incomplete"],
     },
-    policyRules: [policyRules.bankDrift],
+    policyRules: [policyRules.bankDetailRecentChange],
     approvalRequests: [],
     approvalDecisions: [],
     artifacts: [
@@ -605,7 +583,7 @@ export const seededScenarios: WorkflowScenario[] = [
         title: "Risk Worker blocked progression",
         detail: "The run cannot proceed until independent vendor verification clears the remittance drift.",
         blockedReason: "Independent verification for the new bank account has not been received.",
-        controlRefs: [controlRef("policy", "POL-BANK-DRIFT", "Vendor bank change hold", "linked")],
+        controlRefs: [controlRef("policy", policyRules.bankDetailRecentChange.id, policyRules.bankDetailRecentChange.name, "linked")],
       },
       {
         kind: "artifact",
@@ -621,7 +599,7 @@ export const seededScenarios: WorkflowScenario[] = [
         toStatus: "blocked",
         title: "Run is blocked pending vendor verification",
         detail: "The workflow remains in shadow mode and cannot advance without new evidence.",
-        controlRefs: [controlRef("policy", "POL-BANK-DRIFT", "Vendor bank change hold", "linked")],
+        controlRefs: [controlRef("policy", policyRules.bankDetailRecentChange.id, policyRules.bankDetailRecentChange.name, "linked")],
       },
     ],
   },
@@ -649,7 +627,7 @@ export const seededScenarios: WorkflowScenario[] = [
       summary: "Receiving proof never arrived for the exception case, so the supervised run ended in failure instead of hidden fallback.",
       factors: ["receiving evidence missing", "tolerance override unavailable", "exception path timed out"],
     },
-    policyRules: [policyRules.receivingEvidence],
+    policyRules: [policyRules.missingDocumentation],
     approvalRequests: [],
     approvalDecisions: [],
     artifacts: [
@@ -756,7 +734,7 @@ export const seededScenarios: WorkflowScenario[] = [
         title: "Risk Worker failed the exception path",
         detail: "The run could not proceed because required receiving evidence never arrived.",
         blockedReason: "Required receiving evidence never arrived before timeout.",
-        controlRefs: [controlRef("policy", "POL-RECEIVING-EVIDENCE", "Receiving evidence required", "linked")],
+        controlRefs: [controlRef("policy", policyRules.missingDocumentation.id, policyRules.missingDocumentation.name, "linked")],
       },
       {
         kind: "run_status",
@@ -764,7 +742,7 @@ export const seededScenarios: WorkflowScenario[] = [
         toStatus: "failed",
         title: "Run failed under supervision",
         detail: "The workflow ended explicitly instead of silently bypassing the missing-evidence control.",
-        controlRefs: [controlRef("policy", "POL-RECEIVING-EVIDENCE", "Receiving evidence required", "linked")],
+        controlRefs: [controlRef("policy", policyRules.missingDocumentation.id, policyRules.missingDocumentation.name, "linked")],
       },
     ],
   },

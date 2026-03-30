@@ -3,7 +3,7 @@ import {
   buildApprovalsPageContent,
   buildFinOpsWorkflowPageContent,
   buildMissionControlPageData,
-  buildPoliciesPageContent,
+  buildPoliciesPageData,
   buildRunsPageData,
   buildShellOrchestrationSummary,
 } from "./pageAdapters";
@@ -28,8 +28,8 @@ export function useApprovalsPageContent() {
   return buildApprovalsPageContent();
 }
 
-export function usePoliciesPageContent() {
-  return buildPoliciesPageContent();
+export function usePoliciesPageData() {
+  return buildPoliciesPageData();
 }
 
 export function useFinOpsWorkflowPageContent() {

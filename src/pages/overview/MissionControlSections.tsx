@@ -4,6 +4,7 @@ import type {
   ApprovalPreview,
   FlaggedItem,
   MissionTone,
+  PolicyDecisionItem,
   RunLane,
   ScenarioSpotlight,
   SummaryCardItem,
@@ -135,15 +136,17 @@ export function ActivityCard({ entries }: { entries: ActivityEvent[] }) {
 export function RiskPostureCard({
   flaggedItems,
   postureSignals,
+  decisionPosture,
 }: {
   flaggedItems: FlaggedItem[];
   postureSignals: SummaryCardItem[];
+  decisionPosture: PolicyDecisionItem[];
 }) {
   return (
     <SurfaceCard
       eyebrow="Risk posture"
       title="Flagged items and control posture"
-      footer="Affected run, surfaced reason, and next step stay explicit."
+      footer="Affected run, triggered posture, and next control step stay explicit."
     >
       <div className="mission-posture">
         {postureSignals.map((signal) => (
@@ -160,12 +163,38 @@ export function RiskPostureCard({
           <article className="mission-flag" key={item.title}>
             <div className="mission-flag__header">
               <strong>{item.title}</strong>
-              <span className={chipClass(item.tone)}>{item.severity}</span>
+              <div className="mission-chip-row">
+                <span className={chipClass(item.tone)}>{item.severity}</span>
+                <span className={chipClass(item.tone)}>{item.decision}</span>
+              </div>
             </div>
             <p>{item.summary}</p>
             <div className="mission-flag__footer">
               <span>{item.runId}</span>
+              <span>{item.evidence}</span>
               <strong>{item.nextAction}</strong>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="mission-policy">
+        {decisionPosture.map((entry) => (
+          <article className="mission-policy__item" key={`${entry.runId}-${entry.posture}`}>
+            <div className="mission-policy__header">
+              <div>
+                <strong>{entry.runId}</strong>
+                <p>{entry.workflow}</p>
+              </div>
+              <div className="mission-chip-row">
+                <span className={chipClass(entry.tone)}>{entry.posture}</span>
+                <span className={chipClass(entry.tone)}>{entry.risk}</span>
+              </div>
+            </div>
+            <p>{entry.reason}</p>
+            <div className="mission-policy__footer">
+              <span>Next control</span>
+              <strong>{entry.nextControl}</strong>
             </div>
           </article>
         ))}

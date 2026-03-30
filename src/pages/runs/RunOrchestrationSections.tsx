@@ -1,6 +1,7 @@
 import { SurfaceCard } from "../../components/shell/SurfaceCard";
 import type {
   ExecutionModePanel,
+  PolicyPosturePanel,
   RunQueueItem,
   SpotlightRun,
   StepGroup,
@@ -8,11 +9,15 @@ import type {
 } from "./runPageData";
 
 function toneForStatus(statusLabel: string) {
-  if (statusLabel === "Blocked" || statusLabel === "Approval hold") {
+  if (
+    statusLabel === "Blocked" ||
+    statusLabel === "Approval hold" ||
+    statusLabel === "Requires approval"
+  ) {
     return "attention";
   }
 
-  if (statusLabel === "Completed") {
+  if (statusLabel === "Completed" || statusLabel === "Allowed") {
     return "positive";
   }
 
@@ -25,6 +30,14 @@ function chipClass(tone: "neutral" | "attention" | "positive") {
 
 function toneForMode(modeLabel: "Shadow" | "Execute-ready") {
   return modeLabel === "Shadow" ? "neutral" : "positive";
+}
+
+function toneForRiskLabel(riskLabel: string) {
+  if (riskLabel.startsWith("High") || riskLabel.startsWith("Medium")) {
+    return "attention";
+  }
+
+  return "positive";
 }
 
 function toneForTimeline(entry: TimelineItem) {
@@ -56,7 +69,8 @@ export function RunQueueCard({ runs }: { runs: RunQueueItem[] }) {
               <div className="mission-chip-row">
                 <span className={chipClass(toneForMode(run.modeLabel))}>{run.modeLabel}</span>
                 <span className={chipClass(toneForStatus(run.statusLabel))}>{run.statusLabel}</span>
-                <span className={chipClass("attention")}>{run.riskLabel}</span>
+                <span className={chipClass(toneForRiskLabel(run.riskLabel))}>{run.riskLabel}</span>
+                <span className={chipClass(run.decisionTone)}>{run.decisionLabel}</span>
               </div>
             </div>
 
@@ -86,6 +100,10 @@ export function RunQueueCard({ runs }: { runs: RunQueueItem[] }) {
               <span>Next action</span>
               <strong>{run.nextAction}</strong>
             </p>
+            <p className="run-orch__policy-note">
+              <span>Policy context</span>
+              <strong>{run.policySummary}</strong>
+            </p>
           </article>
         ))}
       </div>
@@ -109,6 +127,8 @@ export function CurrentStageCard({ run }: { run: SpotlightRun }) {
           <div className="mission-chip-row">
             <span className={chipClass(toneForMode(run.modeLabel))}>{run.modeLabel}</span>
             <span className={chipClass(toneForStatus(run.statusLabel))}>{run.statusLabel}</span>
+            <span className={chipClass(toneForRiskLabel(run.riskLabel))}>{run.riskLabel}</span>
+            <span className={chipClass(toneForStatus(run.policyPosture))}>{run.policyPosture}</span>
           </div>
         </div>
 
@@ -133,6 +153,12 @@ export function CurrentStageCard({ run }: { run: SpotlightRun }) {
             Active step: {run.activeStepTitle}. Shadow stages {run.shadowStepCount}, execute-ready
             stages {run.executeReadyStepCount}.
           </p>
+        </div>
+
+        <div className="run-orch__spotlight-summary">
+          <span>Policy posture</span>
+          <strong>{run.policyPosture}</strong>
+          <p>{run.policySummary}</p>
         </div>
 
         <div className="run-orch__spotlight-section">
@@ -161,6 +187,60 @@ export function CurrentStageCard({ run }: { run: SpotlightRun }) {
             ))}
           </ul>
         </div>
+      </div>
+    </SurfaceCard>
+  );
+}
+
+export function PolicyPostureCard({ posture }: { posture: PolicyPosturePanel }) {
+  return (
+    <SurfaceCard
+      eyebrow="Policy posture"
+      title="Run-level risk and decision posture"
+      footer="Each decision stays inspectable with trigger, scope, evidence, and next control action."
+    >
+      <div className="run-orch__policy-summary">
+        <article>
+          <span>Blocked actions</span>
+          <strong>{posture.blockedCount}</strong>
+        </article>
+        <article>
+          <span>Approval gates</span>
+          <strong>{posture.escalateCount}</strong>
+        </article>
+        <article>
+          <span>Allowed actions</span>
+          <strong>{posture.allowCount}</strong>
+        </article>
+      </div>
+
+      <div className="run-orch__policy-highlight">
+        <span className={chipClass(toneForRiskLabel(posture.currentRiskLabel))}>{posture.currentRiskLabel}</span>
+        <span className={chipClass(toneForStatus(posture.currentPosture))}>{posture.currentPosture}</span>
+        <p>{posture.topConstraint}</p>
+      </div>
+
+      <div className="run-orch__policy-list">
+        {posture.decisions.map((decision) => (
+          <article className="run-orch__policy-item" key={decision.id}>
+            <div className="run-orch__policy-item-header">
+              <div>
+                <strong>{decision.name}</strong>
+                <p>{decision.scope}</p>
+              </div>
+              <div className="mission-chip-row">
+                <span className={chipClass(decision.tone)}>{decision.outcomeLabel}</span>
+                <span className={chipClass(decision.tone)}>{decision.severityLabel}</span>
+              </div>
+            </div>
+            <p>{decision.summary}</p>
+            <p>{decision.trigger}</p>
+            <div className="run-orch__policy-item-footer">
+              <span>{decision.evidence}</span>
+              <strong>{decision.nextAction}</strong>
+            </div>
+          </article>
+        ))}
       </div>
     </SurfaceCard>
   );

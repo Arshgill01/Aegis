@@ -190,15 +190,31 @@ export type PoliciesOverview = {
 };
 
 export function selectPoliciesOverview(): PoliciesOverview {
-  const rules = listPolicies()
-    .slice()
-    .sort(byPolicyPriority)
-    .map((policy) => ({
-      policy,
-      scenarios: listScenarios().filter((scenario) =>
-        scenario.policies.some((scenarioPolicy) => scenarioPolicy.id === policy.id),
-      ),
-    }));
+  const scenarioMap = new Map(
+    listScenarios().map((scenario) => [scenario.id, scenario] as const),
+  );
+  const policyMap = new Map<string, PolicyRuleReference>();
+
+  for (const scenario of listScenarios()) {
+    for (const policy of scenario.policies) {
+      const existing = policyMap.get(policy.id);
+      if (!existing) {
+        policyMap.set(policy.id, { policy, scenarios: [scenario] });
+        continue;
+      }
+
+      if (existing.scenarios.some((existingScenario) => existingScenario.id === scenario.id)) {
+        continue;
+      }
+
+      const mappedScenario = scenarioMap.get(scenario.id);
+      if (mappedScenario) {
+        existing.scenarios.push(mappedScenario);
+      }
+    }
+  }
+
+  const rules = Array.from(policyMap.values()).sort((left, right) => byPolicyPriority(left.policy, right.policy));
 
   return {
     rules,

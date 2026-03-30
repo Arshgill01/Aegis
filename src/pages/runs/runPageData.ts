@@ -16,6 +16,7 @@ export type RunsPageData = {
   spotlight: SpotlightRun;
   stepGroups: StepGroup[];
   timeline: TimelineItem[];
+  policyPosture: PolicyPosturePanel;
   executionMode: ExecutionModePanel;
   footerNote: string;
 };
@@ -29,6 +30,9 @@ export type RunQueueItem = {
   statusLabel: string;
   riskLabel: string;
   modeLabel: "Shadow" | "Execute-ready";
+  decisionLabel: string;
+  decisionTone: "neutral" | "attention" | "positive";
+  policySummary: string;
   ownerName: string;
   ownerRole: string;
   etaLabel: string;
@@ -48,6 +52,8 @@ export type SpotlightRun = {
   ownerName: string;
   ownerRole: string;
   ownerPosture: string;
+  policyPosture: string;
+  policySummary: string;
   completionLabel: string;
   activeStepTitle: string;
   handoffs: {
@@ -58,6 +64,29 @@ export type SpotlightRun = {
   shadowStepCount: number;
   executeReadyStepCount: number;
   watchpoints: string[];
+};
+
+export type PolicyDecisionItem = {
+  id: string;
+  name: string;
+  scope: string;
+  outcomeLabel: string;
+  severityLabel: string;
+  trigger: string;
+  summary: string;
+  nextAction: string;
+  evidence: string;
+  tone: "neutral" | "attention" | "positive";
+};
+
+export type PolicyPosturePanel = {
+  blockedCount: number;
+  escalateCount: number;
+  allowCount: number;
+  currentRiskLabel: string;
+  currentPosture: string;
+  topConstraint: string;
+  decisions: PolicyDecisionItem[];
 };
 
 export type StepGroup = {

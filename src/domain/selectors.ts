@@ -14,6 +14,7 @@ import {
   listScenarios,
   listWorkers,
 } from "./mockRepository";
+import { getRuntimeState } from "./runtimeStore";
 
 const riskRank: Record<RiskLevel, number> = {
   high: 0,
@@ -46,6 +47,77 @@ function isActiveScenario(scenario: WorkflowScenario) {
 
 function isPendingApproval(approval: ApprovalRequest) {
   return approval.status === "pending";
+}
+
+export type ApprovalEntitySelection = {
+  approval: ApprovalRequest;
+  scenario: WorkflowScenario;
+};
+
+export function selectScenarioByRunId(runId: string): WorkflowScenario | undefined {
+  return listScenarios().find((scenario) => scenario.run.id === runId);
+}
+
+export function selectRunScenario(preferredRunId?: string): WorkflowScenario | undefined {
+  const runtimeState = getRuntimeState();
+  const selectedByRunId = preferredRunId ?? runtimeState.selectedRunId;
+  const selectedScenarioByRun = selectedByRunId
+    ? selectScenarioByRunId(selectedByRunId)
+    : undefined;
+  const selectedScenarioById = runtimeState.selectedScenarioId
+    ? getScenarioById(runtimeState.selectedScenarioId)
+    : undefined;
+
+  return (
+    selectedScenarioByRun
+    ?? selectedScenarioById
+    ?? getScenarioById("scenario-northwind-mismatch")
+    ?? listScenarios()[0]
+  );
+}
+
+export function selectApprovalEntityById(
+  approvalId: string,
+): ApprovalEntitySelection | undefined {
+  for (const scenario of listScenarios()) {
+    const approval = scenario.approvals.find(
+      (currentApproval) => currentApproval.id === approvalId,
+    );
+
+    if (approval) {
+      return { approval, scenario };
+    }
+  }
+
+  return undefined;
+}
+
+export function selectApprovalById(approvalId: string): ApprovalRequest | undefined {
+  return selectApprovalEntityById(approvalId)?.approval;
+}
+
+export function selectApprovalEntity(
+  preferredApprovalId?: string,
+): ApprovalEntitySelection | undefined {
+  const runtimeState = getRuntimeState();
+  const selectionById = preferredApprovalId ?? runtimeState.selectedApprovalId;
+  const selectedApprovalEntity = selectionById
+    ? selectApprovalEntityById(selectionById)
+    : undefined;
+
+  if (selectedApprovalEntity) {
+    return selectedApprovalEntity;
+  }
+
+  const fallbackApproval = listApprovals()
+    .filter(isPendingApproval)
+    .sort(byApprovalPriority)[0];
+
+  if (!fallbackApproval) {
+    return undefined;
+  }
+
+  return selectApprovalEntityById(fallbackApproval.id);
 }
 
 export type MissionControlSnapshot = {
@@ -84,7 +156,7 @@ export function selectMissionControlSnapshot(): MissionControlSnapshot {
     pendingApprovals,
     recentEvents,
     workers: listWorkers(),
-    spotlight: getScenarioById("scenario-northwind-mismatch") ?? activeScenarios[0],
+    spotlight: selectRunScenario() ?? activeScenarios[0],
     activeRunCount: activeScenarios.length,
     pendingApprovalCount: pendingApprovals.length,
     flaggedCount: flaggedScenarios.length,
@@ -134,13 +206,13 @@ export type RunsOverview = {
   waitingRunCount: number;
 };
 
-export function selectRunsOverview(): RunsOverview {
+export function selectRunsOverview(preferredRunId?: string): RunsOverview {
   const scenarios = listScenarios();
   const activeScenarios = scenarios.filter(isActiveScenario).sort(byRiskAndEta);
 
   return {
     activeScenarios,
-    spotlight: getScenarioById("scenario-northwind-mismatch") ?? activeScenarios[0],
+    spotlight: selectRunScenario(preferredRunId) ?? activeScenarios[0],
     openRunCount: activeScenarios.length,
     completedRunCount: scenarios.length - activeScenarios.length,
     executeReadyCount: activeScenarios.filter((scenario) => scenario.run.mode === "execute_ready")
@@ -240,7 +312,7 @@ export function selectFinOpsOverview(): FinOpsOverview {
   const activeScenarioCount = scenarios.filter(isActiveScenario).length;
 
   return {
-    spotlight: getScenarioById("scenario-northwind-mismatch") ?? scenarios[0],
+    spotlight: selectRunScenario() ?? scenarios[0],
     scenarios,
     activeScenarioCount,
     exceptionScenarioCount: scenarios.filter((scenario) => scenario.run.riskLevel !== "low")

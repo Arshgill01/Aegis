@@ -22,6 +22,7 @@ export type PageContentConfig = {
     title: string;
     detail: string;
     tag?: string;
+    href?: string;
   }[];
   secondaryTitle: string;
   secondaryEyebrow: string;
@@ -29,6 +30,7 @@ export type PageContentConfig = {
     title: string;
     detail: string;
     tag?: string;
+    href?: string;
   }[];
   footerNote: string;
 };

@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 
+import { normalizeNavigationPath } from "../../app/entityRoutes";
 import { useShellOrchestrationSummary } from "../../app/data/hooks";
 import { navigationSections } from "../../app/routes";
 import { ShellSidebar } from "./ShellSidebar";
@@ -7,11 +8,12 @@ import { ShellSidebar } from "./ShellSidebar";
 export function AppShell() {
   const location = useLocation();
   const shellSummary = useShellOrchestrationSummary(location.pathname);
+  const normalizedPath = normalizeNavigationPath(location.pathname);
 
   const activeRoute =
     navigationSections
       .flatMap((section) => section.items)
-      .find((item) => item.path === location.pathname) ?? navigationSections[0].items[0];
+      .find((item) => item.path === normalizedPath) ?? navigationSections[0].items[0];
 
   return (
     <div className="app-shell">

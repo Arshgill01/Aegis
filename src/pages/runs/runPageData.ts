@@ -23,6 +23,7 @@ export type RunsPageData = {
 
 export type RunQueueItem = {
   id: string;
+  runHref: string;
   workflow: string;
   accountName: string;
   currentStage: string;

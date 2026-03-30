@@ -7,15 +7,22 @@ import type {
   WorkflowScenario,
 } from "../../domain/contracts";
 import {
+  approvalDetailPath,
+  normalizeNavigationPath,
+  runDetailPath,
+} from "../entityRoutes";
+import {
   getScenarioByRunId,
   getWorkerById,
 } from "../../domain/mockRepository";
 import {
+  selectApprovalEntityById,
   selectAgentsOverview,
   selectApprovalsOverview,
   selectFinOpsOverview,
   selectMissionControlSnapshot,
   selectPoliciesOverview,
+  selectScenarioByRunId,
   selectRunsOverview,
 } from "../../domain/selectors";
 import type { PageContentConfig } from "../../pages/pageContent";
@@ -154,6 +161,10 @@ const riskPriority: Record<RiskLevel, number> = {
   medium: 1,
   low: 2,
 };
+
+function byApprovalPriority(left: ApprovalRequest, right: ApprovalRequest) {
+  return riskPriority[left.riskLevel] - riskPriority[right.riskLevel];
+}
 
 function byRiskAndEta(left: WorkflowScenario, right: WorkflowScenario) {
   return (
@@ -304,6 +315,7 @@ export function buildMissionControlPageData(): MissionControlPageData {
     ],
     activeRuns: snapshot.activeScenarios.slice(0, 4).map((scenario) => ({
       id: scenario.run.id,
+      runHref: runDetailPath(scenario.run.id),
       workflow: scenario.run.workflow,
       company: scenario.run.accountName,
       stage: scenario.run.currentStage,
@@ -315,6 +327,8 @@ export function buildMissionControlPageData(): MissionControlPageData {
     })),
     approvals: snapshot.pendingApprovals.map((approval) => ({
       id: approval.id,
+      approvalHref: approvalDetailPath(approval.id),
+      runHref: runDetailPath(approval.runId),
       title: approval.title,
       runId: approval.runId,
       reason: approval.reason,
@@ -336,6 +350,7 @@ export function buildMissionControlPageData(): MissionControlPageData {
       return {
         title: scenario.title,
         runId: scenario.run.id,
+        runHref: runDetailPath(scenario.run.id),
         severity: `${formatRiskLabel(scenario.run.riskLevel)} severity`,
         decision: formatPolicyPosture(policy?.outcome ?? "escalate"),
         summary: policy?.trigger ?? scenario.narrative,
@@ -353,6 +368,7 @@ export function buildMissionControlPageData(): MissionControlPageData {
 
         return {
           runId: scenario.run.id,
+          runHref: runDetailPath(scenario.run.id),
           workflow: scenario.run.workflow,
           posture: formatPolicyPosture(outcome),
           risk: `${formatRiskLabel(scenario.run.riskLevel)} risk`,
@@ -577,7 +593,9 @@ function buildRouteNarrative(
     scenarioCount: number;
   },
 ) {
-  switch (pathname) {
+  const navigationPath = normalizeNavigationPath(pathname);
+
+  switch (navigationPath) {
     case "/agents":
       return `${params.activeWorkers} worker lanes are assigned across ${params.handoffCount} visible handoffs.`;
     case "/runs":
@@ -639,8 +657,8 @@ export function buildShellOrchestrationSummary(pathname: string): ShellOrchestra
   };
 }
 
-export function buildRunsPageData(): RunsPageData {
-  const overview = selectRunsOverview();
+export function buildRunsPageData(preferredRunId?: string): RunsPageData {
+  const overview = selectRunsOverview(preferredRunId);
   const spotlightSteps: StepItem[] = overview.spotlight.steps.map((step, index) => {
     const worker = getWorkerById(step.workerId);
     const previousStep = overview.spotlight.steps[index - 1];
@@ -801,6 +819,7 @@ export function buildRunsPageData(): RunsPageData {
 
       return {
         id: scenario.run.id,
+        runHref: runDetailPath(scenario.run.id),
         workflow: scenario.run.workflow,
         accountName: scenario.run.accountName,
         currentStage: scenario.run.currentStage,
@@ -869,6 +888,48 @@ export function buildRunsPageData(): RunsPageData {
   };
 }
 
+export type RunDetailPageData = {
+  scenario: WorkflowScenario;
+  runsPage: RunsPageData;
+  relatedApprovals: ApprovalRequest[];
+};
+
+export function buildRunDetailPageData(runId: string): RunDetailPageData | undefined {
+  const scenario = selectScenarioByRunId(runId);
+
+  if (!scenario) {
+    return undefined;
+  }
+
+  return {
+    scenario,
+    runsPage: buildRunsPageData(runId),
+    relatedApprovals: scenario.approvals.slice().sort(byApprovalPriority),
+  };
+}
+
+export type ApprovalDetailPageData = {
+  approval: ApprovalRequest;
+  scenario: WorkflowScenario;
+  relatedApprovals: ApprovalRequest[];
+};
+
+export function buildApprovalDetailPageData(
+  approvalId: string,
+): ApprovalDetailPageData | undefined {
+  const selectedEntity = selectApprovalEntityById(approvalId);
+
+  if (!selectedEntity) {
+    return undefined;
+  }
+
+  return {
+    approval: selectedEntity.approval,
+    scenario: selectedEntity.scenario,
+    relatedApprovals: selectedEntity.scenario.approvals.slice().sort(byApprovalPriority),
+  };
+}
+
 export function buildApprovalsPageContent(): PageContentConfig {
   const overview = selectApprovalsOverview();
   const primaryApproval = overview.pendingApprovals[0];
@@ -914,6 +975,7 @@ export function buildApprovalsPageContent(): PageContentConfig {
       title: approval.title,
       detail: `${approval.reason} Requested action: ${approval.requestedAction}`,
       tag: `${approval.dueLabel} · ${formatRiskLabel(approval.riskLevel)}`,
+      href: approvalDetailPath(approval.id),
     })),
     secondaryTitle: "Decision brief",
     secondaryEyebrow: primaryScenario?.run.id ?? "No active gate",
@@ -923,10 +985,12 @@ export function buildApprovalsPageContent(): PageContentConfig {
             title: "Why the run paused",
             detail: `${primaryScenario.run.currentStage}. ${primaryPolicy?.trigger ?? "A seeded approval trigger is attached to this run."}`,
             tag: primaryApproval?.triggerLabel,
+            href: runDetailPath(primaryScenario.run.id),
           },
           {
             title: "What approval authorizes",
             detail: `${primaryApproval?.requestedAction ?? "Resume the blocked action."} Next system step: ${primaryScenario.run.nextAction}`,
+            href: runDetailPath(primaryScenario.run.id),
           },
           {
             title: "Evidence attached",

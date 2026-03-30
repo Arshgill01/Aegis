@@ -10,6 +10,7 @@ export type SummaryCardItem = {
 
 export type RunLane = {
   id: string;
+  runHref: string;
   workflow: string;
   company: string;
   stage: string;
@@ -22,6 +23,8 @@ export type RunLane = {
 
 export type ApprovalPreview = {
   id: string;
+  approvalHref: string;
+  runHref: string;
   title: string;
   runId: string;
   reason: string;
@@ -43,6 +46,7 @@ export type ActivityEvent = {
 export type FlaggedItem = {
   title: string;
   runId: string;
+  runHref: string;
   severity: string;
   decision: string;
   summary: string;
@@ -53,6 +57,7 @@ export type FlaggedItem = {
 
 export type PolicyDecisionItem = {
   runId: string;
+  runHref: string;
   workflow: string;
   posture: string;
   risk: string;

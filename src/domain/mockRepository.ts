@@ -7,10 +7,15 @@ import type {
   WorkflowRun,
   WorkflowScenario,
 } from "./contracts";
-import { seededAegisData } from "./fixtures";
+import { getRuntimeState } from "./runtimeStore";
 
 export function getSeededAegisData(): SeededAegisData {
-  return seededAegisData;
+  const runtimeState = getRuntimeState();
+
+  return {
+    workers: runtimeState.workers,
+    scenarios: runtimeState.scenarios,
+  };
 }
 
 export function listWorkers(): AgentWorker[] {
